@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Admin/OneDrive/Documents/nodejs/Student-Activity-Portal/frontend/eventfe/src/hooks/index.tsx"],"sourcesContent":["\"use client\"\r\nimport { QueryClient, QueryClientProvider } from \"@tanstack/react-query\";\r\nimport { useState } from \"react\";\r\n\r\n\r\nexport function AppProvider({ children }: { children: React.ReactNode }) {\r\n  const [queryClient] = useState(() => {\r\n    return new QueryClient({\r\n      defaultOptions: {\r\n      }\r\n    })\r\n  })\r\n  return (\r\n    <QueryClientProvider client={queryClient}>\r\n      {children}\r\n    </QueryClientProvider>\r\n  )\r\n}"],"names":[],"mappings":";;;;;AACA;AAAA;AACA;AAFA;;;;AAKO,SAAS,YAAY,EAAE,QAAQ,EAAiC;IACrE,MAAM,CAAC,YAAY,GAAG,IAAA,iNAAQ,EAAC;QAC7B,OAAO,IAAI,4LAAW,CAAC;YACrB,gBAAgB,CAChB;QACF;IACF;IACA,qBACE,8OAAC,6MAAmB;QAAC,QAAQ;kBAC1B;;;;;;AAGP"}}]
+}

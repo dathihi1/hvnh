@@ -1,0 +1,14 @@
+{
+  "/(main)/club/page": "app/(main)/club/page.js",
+  "/(main)/contact/page": "app/(main)/contact/page.js",
+  "/(main)/event/[id]/page": "app/(main)/event/[id]/page.js",
+  "/(main)/event/competition/page": "app/(main)/event/competition/page.js",
+  "/(main)/event/page": "app/(main)/event/page.js",
+  "/(main)/history-club/page": "app/(main)/history-club/page.js",
+  "/(main)/my-events/page": "app/(main)/my-events/page.js",
+  "/(main)/page": "app/(main)/page.js",
+  "/(main)/profile/page": "app/(main)/profile/page.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/logout/route": "app/api/auth/logout/route.js",
+  "/auth/page": "app/auth/page.js"
+}
