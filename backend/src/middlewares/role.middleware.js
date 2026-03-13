@@ -2,7 +2,9 @@ const AppError = require("../utils/app-error");
 
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.LoaiTaiKhoan)) {
+    const userRoles = req.user.roles || [];
+    const hasRole = roles.some((role) => userRoles.includes(role));
+    if (!hasRole) {
       throw new AppError("FORBIDDEN");
     }
     next();

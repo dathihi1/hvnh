@@ -11,32 +11,31 @@ datasource db {
 // USERS
 // ==========================================
 model User {
-  userId                 Int                    @id @default(autoincrement())
-  userName               String
-  studentId              String?
-  university             String
-  phoneNumber            String?                @unique
-  email                  String                 @unique
-  password               String
-  status                 String                 @default("active")
-  avatarUrl              String?
-  isDeleted              Boolean                @default(false)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @default(now())
-  deletedAt              DateTime?
-  createdBy              Int?
-  updatedBy              Int?
-  deletedBy              Int?
+  userId                Int                    @id @default(autoincrement())
+  userName              String
+  studentId             String?
+  university            String
+  phoneNumber           String?                @unique
+  email                 String                 @unique
+  password              String
+  status                String                 @default("active")
+  avatarUrl             String?
+  isDeleted             Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now())
+  deletedAt             DateTime?
+  createdBy             Int?
+  updatedBy             Int?
+  deletedBy             Int?
 
-  clubApplications       ClubApplication[]
-  formResponses          FormResponse[]
-  notifications          Notification[]
-  organizationDocuments  OrganizationDocument[]
-  organizationMembers    OrganizationMember[]
-  registrations          Registration[]
-  systemLogs             SystemLog[]
-  teamMembers            TeamMember[]
-  userRoles              UserRole[]
+  clubApplications      ClubApplication[]
+  notifications         Notification[]
+  organizationDocuments OrganizationDocument[]
+  organizationMembers   OrganizationMember[]
+  registrations         Registration[]
+  systemLogs            SystemLog[]
+  teamMembers           TeamMember[]
+  userRoles             UserRole[]
 
   @@unique([studentId, university])
   @@map("users")
@@ -46,23 +45,23 @@ model User {
 // ORGANIZATIONS
 // ==========================================
 model Organization {
-  organizationId         Int                    @id @default(autoincrement())
-  organizationName       String
-  organizationType       String
-  logoUrl                String?
-  coverImageUrl          String?
-  description            String?
-  isDeleted              Boolean                @default(false)
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @default(now())
-  deletedAt              DateTime?
-  createdBy              Int?
-  updatedBy              Int?
-  deletedBy              Int?
+  organizationId        Int                    @id @default(autoincrement())
+  organizationName      String
+  organizationType      String
+  logoUrl               String?
+  coverImageUrl         String?
+  description           String?
+  isDeleted             Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now())
+  deletedAt             DateTime?
+  createdBy             Int?
+  updatedBy             Int?
+  deletedBy             Int?
 
-  activities             Activity[]
-  organizationDocuments  OrganizationDocument[]
-  organizationMembers    OrganizationMember[]
+  activities            Activity[]
+  organizationDocuments OrganizationDocument[]
+  organizationMembers   OrganizationMember[]
 
   @@map("organizations")
 }
@@ -71,39 +70,39 @@ model OrganizationMember {
   userId         Int
   organizationId Int
   role           String?
-  joinDate       DateTime?      @db.Date
-  isDeleted      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @default(now())
+  joinDate       DateTime?    @db.Date
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
   deletedAt      DateTime?
   createdBy      Int?
   updatedBy      Int?
   deletedBy      Int?
 
-  organization   Organization   @relation(fields: [organizationId], references: [organizationId])
-  user           User           @relation(fields: [userId], references: [userId])
+  organization   Organization @relation(fields: [organizationId], references: [organizationId])
+  user           User         @relation(fields: [userId], references: [userId])
 
   @@id([userId, organizationId])
   @@map("organization_members")
 }
 
 model OrganizationDocument {
-  documentId     Int            @id @default(autoincrement())
+  documentId     Int          @id @default(autoincrement())
   documentName   String
   fileUrl        String
   category       String?
   organizationId Int
   userId         Int
-  isDeleted      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @default(now())
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
   deletedAt      DateTime?
   createdBy      Int?
   updatedBy      Int?
   deletedBy      Int?
 
-  organization   Organization   @relation(fields: [organizationId], references: [organizationId])
-  user           User           @relation(fields: [userId], references: [userId])
+  organization   Organization @relation(fields: [organizationId], references: [organizationId])
+  user           User         @relation(fields: [userId], references: [userId])
 
   @@map("organization_documents")
 }
@@ -111,71 +110,122 @@ model OrganizationDocument {
 // ==========================================
 // ACTIVITIES
 // ==========================================
-model Activity {
-  activityId                Int               @id @default(autoincrement())
-  activityName              String
-  location                  String?
-  type                      String
-  category                  String?
-  startTime                 DateTime?
-  endTime                   DateTime?
-  formRegistrationStartTime DateTime?
-  formRegistrationEndTime   DateTime?
-  checkInStart              DateTime?
-  checkInEnd                DateTime?
-  teamMode                  String            @default("individual")
-  minTeamMembers            Int?
-  maxTeamMembers            Int?
-  maxParticipants           Int?
-  approvalStatus            String            @default("pending")
-  prize                     String?
-  coverImage                String?
-  description               String?
-  activityStatus            String            @default("draft")
-  organizationId            Int
-  isDeleted                 Boolean           @default(false)
-  createdAt                 DateTime          @default(now())
-  updatedAt                 DateTime          @default(now())
-  deletedAt                 DateTime?
-  createdBy                 Int?
-  updatedBy                 Int?
-  deletedBy                 Int?
+model ActivityCategory {
+  categoryId   Int        @id @default(autoincrement())
+  categoryName String     @unique
+  isDeleted    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now())
+  deletedAt    DateTime?
+  createdBy    Int?
+  updatedBy    Int?
+  deletedBy    Int?
 
-  organization              Organization      @relation(fields: [organizationId], references: [organizationId])
-  clubApplications          ClubApplication[]
-  forms                     Form[]
-  registrations             Registration[]
+  activities   Activity[]
+
+  @@map("activity_categories")
+}
+
+model Activity {
+  activityId           Int               @id @default(autoincrement())
+  activityName         String
+  description          String?
+  coverImage           String?
+  location             String?
+  activityType         String
+  teamMode             String            @default("individual")
+  startTime            DateTime?
+  endTime              DateTime?
+  registrationDeadline DateTime?
+  minParticipants      Int?
+  maxParticipants      Int?
+  activityStatus       String            @default("draft")
+  prize                String?
+  organizationId       Int
+  categoryId           Int
+  isDeleted            Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @default(now())
+  deletedAt            DateTime?
+  createdBy            Int?
+  updatedBy            Int?
+  deletedBy            Int?
+
+  organization         Organization      @relation(fields: [organizationId], references: [organizationId])
+  category             ActivityCategory  @relation(fields: [categoryId], references: [categoryId])
+  activityCheckins     ActivityCheckin[]
+  activityTeamRule     ActivityTeamRule?
+  clubApplications     ClubApplication[]
+  registrations        Registration[]
 
   @@map("activities")
+}
+
+model ActivityCheckin {
+  checkinId    Int       @id @default(autoincrement())
+  activityId   Int
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+
+  activity             Activity              @relation(fields: [activityId], references: [activityId], onDelete: Cascade)
+  registrationCheckins RegistrationCheckin[]
+
+  @@map("activity_checkins")
+}
+
+model ActivityTeamRule {
+  ruleId         Int      @id @default(autoincrement())
+  activityId     Int      @unique
+  minTeamMembers Int?
+  maxTeamMembers Int?
+
+  activity       Activity @relation(fields: [activityId], references: [activityId], onDelete: Cascade)
+
+  @@map("activity_team_rules")
 }
 
 // ==========================================
 // REGISTRATIONS
 // ==========================================
 model Registration {
-  registrationId        Int            @id @default(autoincrement())
-  status                String         @default("pending")
-  registrationTimeStart DateTime       @default(now())
-  registrationType      String         @default("individual")
-  checkInTime           DateTime?
-  checkOutTime          DateTime?
-  userId                Int
-  activityId            Int
-  isDeleted             Boolean        @default(false)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @default(now())
-  deletedAt             DateTime?
-  createdBy             Int?
-  updatedBy             Int?
-  deletedBy             Int?
+  registrationId   Int       @id @default(autoincrement())
+  teamName         String?
+  isLookingForTeam Boolean?
+  status           String    @default("pending")
+  registrationTime DateTime  @default(now())
+  registrationType String    @default("individual")
+  userId           Int
+  activityId       Int
+  isDeleted        Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now())
+  deletedAt        DateTime?
+  createdBy        Int?
+  updatedBy        Int?
+  deletedBy        Int?
 
-  activity              Activity       @relation(fields: [activityId], references: [activityId])
-  user                  User           @relation(fields: [userId], references: [userId])
-  review                Review?
-  teamMembers           TeamMember[]
+  activity             Activity              @relation(fields: [activityId], references: [activityId])
+  user                 User                  @relation(fields: [userId], references: [userId])
+  registrationCheckins RegistrationCheckin[]
+  review               Review?
+  teamMembers          TeamMember[]
 
   @@unique([userId, activityId])
   @@map("registrations")
+}
+
+model RegistrationCheckin {
+  checkinId         Int       @id @default(autoincrement())
+  registrationId    Int
+  activityCheckinId Int?
+  checkInTime       DateTime?
+  checkOutTime      DateTime?
+
+  registration    Registration     @relation(fields: [registrationId], references: [registrationId], onDelete: Cascade)
+  activityCheckin ActivityCheckin? @relation(fields: [activityCheckinId], references: [checkinId])
+
+  @@unique([registrationId, activityCheckinId])
+  @@map("registration_checkins")
 }
 
 model TeamMember {
@@ -198,43 +248,42 @@ model TeamMember {
 }
 
 model Review {
-  reviewId       Int           @id @default(autoincrement())
+  reviewId       Int          @id @default(autoincrement())
   rating         Int
   comment        String?
-  reviewTime     DateTime      @default(now())
-  registrationId Int           @unique
-  isDeleted      Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now())
+  reviewTime     DateTime     @default(now())
+  registrationId Int          @unique
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
   deletedAt      DateTime?
   createdBy      Int?
   updatedBy      Int?
   deletedBy      Int?
 
-  registration   Registration  @relation(fields: [registrationId], references: [registrationId])
+  registration   Registration @relation(fields: [registrationId], references: [registrationId])
 
   @@map("reviews")
 }
 
 model ClubApplication {
-  applicationId Int        @id @default(autoincrement())
-  answers       String?
-  submittedAt   DateTime   @default(now())
+  applicationId Int       @id @default(autoincrement())
+  submittedAt   DateTime  @default(now())
   interviewTime DateTime?
-  result        String     @default("pending")
+  result        String    @default("pending")
   note          String?
   activityId    Int
   userId        Int
-  isDeleted     Boolean    @default(false)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now())
+  isDeleted     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
   deletedAt     DateTime?
   createdBy     Int?
   updatedBy     Int?
   deletedBy     Int?
 
-  activity      Activity   @relation(fields: [activityId], references: [activityId])
-  user          User       @relation(fields: [userId], references: [userId])
+  activity      Activity  @relation(fields: [activityId], references: [activityId])
+  user          User      @relation(fields: [userId], references: [userId])
 
   @@unique([activityId, userId])
   @@map("club_applications")
@@ -265,229 +314,24 @@ model Notification {
 }
 
 // ==========================================
-// FORMS
-// ==========================================
-model Form {
-  formId              Int            @id @default(autoincrement())
-  title               String
-  description         String?
-  headerImageUrl      String?
-  confirmationMessage String?
-  status              String         @default("draft")
-  collectEmail        Boolean        @default(false)
-  limitOneResponse    Boolean        @default(true)
-  allowEditResponse   Boolean        @default(false)
-  showProgressBar     Boolean        @default(false)
-  shuffleQuestions    Boolean        @default(false)
-  requireSignIn       Boolean        @default(true)
-  responseLimit       Int?
-  openAt              DateTime?
-  closeAt             DateTime?
-  activityId          Int?
-  isDeleted           Boolean        @default(false)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @default(now())
-  deletedAt           DateTime?
-  createdBy           Int?
-  updatedBy           Int?
-  deletedBy           Int?
-
-  responses           FormResponse[]
-  sections            FormSection[]
-  activity            Activity?      @relation(fields: [activityId], references: [activityId])
-
-  @@map("forms")
-}
-
-model FormSection {
-  sectionId      Int              @id @default(autoincrement())
-  title          String           @default("Phần không có tiêu đề")
-  description    String?
-  order          Int              @default(0)
-  navigationType String           @default("next")
-  formId         Int
-  isDeleted      Boolean          @default(false)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @default(now())
-
-  form           Form             @relation(fields: [formId], references: [formId])
-  options        QuestionOption[]
-  questions      Question[]
-
-  @@map("form_sections")
-}
-
-model FormResponse {
-  responseId      Int       @id @default(autoincrement())
-  respondentEmail String?
-  status          String    @default("submitted")
-  submittedAt     DateTime  @default(now())
-  formId          Int
-  userId          Int?
-  isDeleted       Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @default(now())
-  deletedAt       DateTime?
-  deletedBy       Int?
-
-  answers         Answer[]
-  form            Form      @relation(fields: [formId], references: [formId])
-  user            User?     @relation(fields: [userId], references: [userId])
-
-  @@map("form_responses")
-}
-
-model Question {
-  questionId       Int              @id @default(autoincrement())
-  title            String
-  description      String?
-  type             String
-  order            Int              @default(0)
-  required         Boolean          @default(false)
-  scaleMin         Int?             @default(1)
-  scaleMax         Int?             @default(5)
-  scaleMinLabel    String?
-  scaleMaxLabel    String?
-  allowedFileTypes String[]
-  maxFileSize      Int?             @default(10)
-  maxFiles         Int?             @default(1)
-  imageUrl         String?
-  videoUrl         String?
-  validationRules  Json?
-  displayCondition Json?
-  sectionId        Int
-  isDeleted        Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @default(now())
-
-  answers          Answer[]
-  gridRows         GridRow[]
-  options          QuestionOption[]
-  section          FormSection      @relation(fields: [sectionId], references: [sectionId])
-
-  @@map("questions")
-}
-
-model QuestionOption {
-  optionId      Int            @id @default(autoincrement())
-  label         String
-  order         Int            @default(0)
-  isOther       Boolean        @default(false)
-  imageUrl      String?
-  goToSectionId Int?
-  questionId    Int
-  isDeleted     Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-
-  answerOptions AnswerOption[]
-  goToSection   FormSection?   @relation(fields: [goToSectionId], references: [sectionId])
-  question      Question       @relation(fields: [questionId], references: [questionId])
-
-  @@map("question_options")
-}
-
-model GridRow {
-  rowId         Int            @id @default(autoincrement())
-  label         String
-  order         Int            @default(0)
-  questionId    Int
-  isDeleted     Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-
-  answerOptions AnswerOption[]
-  question      Question       @relation(fields: [questionId], references: [questionId])
-
-  @@map("grid_rows")
-}
-
-model Answer {
-  answerId      Int            @id @default(autoincrement())
-  textValue     String?
-  fileUrl       String?
-  questionId    Int
-  responseId    Int
-  isDeleted     Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-
-  answerOptions AnswerOption[]
-  question      Question       @relation(fields: [questionId], references: [questionId])
-  response      FormResponse   @relation(fields: [responseId], references: [responseId])
-
-  @@map("answers")
-}
-
-model AnswerOption {
-  answerOptionId Int            @id @default(autoincrement())
-  answerId       Int
-  optionId       Int
-  rowId          Int?
-  otherText      String?
-  isDeleted      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-
-  answer         Answer         @relation(fields: [answerId], references: [answerId])
-  option         QuestionOption @relation(fields: [optionId], references: [optionId])
-  gridRow        GridRow?       @relation(fields: [rowId], references: [rowId])
-
-  @@map("answer_options")
-}
-
-// ==========================================
-// ROLES & PERMISSIONS
+// ROLES
 // ==========================================
 model Role {
-  roleId           Int              @id @default(autoincrement())
-  code             String           @unique
-  roleName         String           @unique
-  description      String?
-  isDeleted        Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @default(now())
-  deletedAt        DateTime?
-  createdBy        Int?
-  updatedBy        Int?
-  deletedBy        Int?
+  roleId      Int        @id @default(autoincrement())
+  code        String     @unique
+  roleName    String     @unique
+  description String?
+  isDeleted   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now())
+  deletedAt   DateTime?
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
 
-  rolePermissions  RolePermission[]
-  userRoles        UserRole[]
+  userRoles   UserRole[]
 
   @@map("roles")
-}
-
-model Permission {
-  permissionId     Int              @id @default(autoincrement())
-  code             String           @unique
-  name             String
-  description      String?
-  resource         String?
-  action           String?
-  isDeleted        Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @default(now())
-  createdBy        Int?
-  updatedBy        Int?
-  deletedBy        Int?
-
-  rolePermissions  RolePermission[]
-
-  @@map("permissions")
-}
-
-model RolePermission {
-  roleId       Int
-  permissionId Int
-  isDeleted    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @default(now())
-  createdBy    Int?
-  updatedBy    Int?
-  deletedBy    Int?
-
-  permission   Permission @relation(fields: [permissionId], references: [permissionId])
-  role         Role       @relation(fields: [roleId], references: [roleId])
-
-  @@id([roleId, permissionId])
-  @@map("role_permissions")
 }
 
 model UserRole {

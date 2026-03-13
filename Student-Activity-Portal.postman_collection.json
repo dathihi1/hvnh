@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Student Activity Portal",
-    "description": "API collection cho Student Activity Portal backend. Base URL: http://localhost:3000",
+    "description": "API collection for Student Activity Portal backend. Base URL: http://localhost:3000",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -55,7 +55,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"TenNguoiDung\": \"Nguyen Van A\",\n  \"Email\": \"nguyenvana@example.com\",\n  \"MatKhau\": \"password123\",\n  \"MaSV\": \"SV001\",\n  \"SDT\": \"0912345678\"\n}",
+              "raw": "{\n  \"userName\": \"Nguyen Van A\",\n  \"email\": \"nguyenvana@example.com\",\n  \"password\": \"password123\",\n  \"university\": \"Dai hoc Bach Khoa\",\n  \"studentId\": \"SV001\",\n  \"phoneNumber\": \"0912345678\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -92,7 +92,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"Email\": \"nguyenvana@example.com\",\n  \"MatKhau\": \"password123\"\n}",
+              "raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"Student@123\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -100,7 +100,45 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Login. Token tu dong luu vao bien collection."
+            "description": "Login. Token is automatically saved to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data) {",
+                  "  if (res.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "  }",
+                  "  if (res.data.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as admin. Token is automatically saved to collection variables."
           },
           "response": []
         },
@@ -143,7 +181,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"Email\": \"nguyenvana@example.com\"\n}",
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -161,7 +199,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"MatKhauMoi\": \"newpassword123\"\n}",
+              "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"newPassword\": \"newpassword123\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -208,7 +246,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"MatKhauCu\": \"password123\",\n  \"MatKhauMoi\": \"newpassword456\"\n}",
+              "raw": "{\n  \"oldPassword\": \"password123\",\n  \"newPassword\": \"newpassword456\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -222,10 +260,10 @@
       ]
     },
     {
-      "name": "Thong Bao (Notification)",
+      "name": "Notifications",
       "item": [
         {
-          "name": "Send Notification (ADMIN/CHU_CLB)",
+          "name": "Send Notification (admin/organization_leader)",
           "event": [
             {
               "listen": "test",
@@ -233,8 +271,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "const res = pm.response.json();",
-                  "if (res.success && res.data && res.data.MaThongBao) {",
-                  "  pm.collectionVariables.set('notificationId', res.data.MaThongBao);",
+                  "if (res.success && res.data && res.data.notificationId) {",
+                  "  pm.collectionVariables.set('notificationId', res.data.notificationId);",
                   "}"
                 ]
               }
@@ -248,20 +286,20 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"TieuDe\": \"Thong bao moi\",\n  \"NoiDung\": \"Noi dung thong bao\",\n  \"MaNguoiDung\": \"<target-user-id>\",\n  \"LoaiThongBao\": \"HE_THONG\",\n  \"KenhGui\": [\"IN_APP\"]\n}",
+              "raw": "{\n  \"title\": \"New Notification\",\n  \"content\": \"Notification content here\",\n  \"userId\": 1,\n  \"notificationType\": \"system\",\n  \"channels\": [\"IN_APP\"]\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/send",
+              "raw": "{{baseUrl}}/api/notifications/send",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "send"]
+              "path": ["api", "notifications", "send"]
             },
-            "description": "Gui thong bao cho 1 nguoi dung. KenhGui: IN_APP, EMAIL, SMS. Yeu cau role ADMIN hoac CHU_CLB."
+            "description": "Send notification to a single user. channels: IN_APP, EMAIL, SMS. Requires role admin or organization_leader."
           },
           "response": []
         },
         {
-          "name": "Send Bulk Notification (ADMIN/CHU_CLB)",
+          "name": "Send Bulk Notification (admin/organization_leader)",
           "request": {
             "method": "POST",
             "header": [
@@ -270,15 +308,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"TieuDe\": \"Thong bao toan truong\",\n  \"NoiDung\": \"Noi dung gui cho tat ca\",\n  \"LoaiThongBao\": \"HE_THONG\",\n  \"KenhGui\": [\"IN_APP\", \"EMAIL\"],\n  \"TatCa\": true\n}",
+              "raw": "{\n  \"title\": \"Broadcast Notification\",\n  \"content\": \"Content for all users\",\n  \"notificationType\": \"system\",\n  \"channels\": [\"IN_APP\", \"EMAIL\"],\n  \"sendToAll\": true\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/send-bulk",
+              "raw": "{{baseUrl}}/api/notifications/send-bulk",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "send-bulk"]
+              "path": ["api", "notifications", "send-bulk"]
             },
-            "description": "Gui thong bao hang loat. Target: TatCa=true (all users), MaToChuc (club members), DanhSachNguoiDung (list IDs). ThoiGianGui for scheduled."
+            "description": "Send bulk notification. Target: sendToAll=true (all users), organizationId (club members), userIds (specific list). Use scheduledAt for scheduled delivery."
           },
           "response": []
         },
@@ -288,17 +326,17 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao?page=1&limit=20",
+              "raw": "{{baseUrl}}/api/notifications?page=1&limit=20",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao"],
+              "path": ["api", "notifications"],
               "query": [
                 { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" },
-                { "key": "LoaiThongBao", "value": "HE_THONG", "disabled": true },
-                { "key": "TrangThai", "value": "CHUA_DOC", "disabled": true }
+                { "key": "notificationType", "value": "system", "disabled": true },
+                { "key": "status", "value": "unread", "disabled": true }
               ]
             },
-            "description": "Lay danh sach thong bao cua minh (paginated). Filter: LoaiThongBao, TrangThai."
+            "description": "Get paginated notifications for current user. Filter by notificationType (system/activity/registration) and status (unread/read)."
           },
           "response": []
         },
@@ -308,9 +346,9 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/stats",
+              "raw": "{{baseUrl}}/api/notifications/stats",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "stats"]
+              "path": ["api", "notifications", "stats"]
             }
           },
           "response": []
@@ -321,9 +359,9 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/{{notificationId}}",
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "{{notificationId}}"]
+              "path": ["api", "notifications", "{{notificationId}}"]
             }
           },
           "response": []
@@ -334,9 +372,9 @@
             "method": "PUT",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/{{notificationId}}/read",
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "{{notificationId}}", "read"]
+              "path": ["api", "notifications", "{{notificationId}}", "read"]
             }
           },
           "response": []
@@ -347,9 +385,9 @@
             "method": "PUT",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/read-all",
+              "raw": "{{baseUrl}}/api/notifications/read-all",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "read-all"]
+              "path": ["api", "notifications", "read-all"]
             }
           },
           "response": []
@@ -360,9 +398,9 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": {
-              "raw": "{{baseUrl}}/api/thong-bao/{{notificationId}}",
+              "raw": "{{baseUrl}}/api/notifications/{{notificationId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "thong-bao", "{{notificationId}}"]
+              "path": ["api", "notifications", "{{notificationId}}"]
             }
           },
           "response": []
@@ -390,7 +428,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "search"]
             },
-            "description": "Tim kiem hoat dong thong minh bang AI (Gemini)."
+            "description": "Smart activity search using AI (Gemini)."
           },
           "response": []
         },
@@ -412,7 +450,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "recommend"]
             },
-            "description": "Goi y hoat dong phu hop dua tren lich su va so thich."
+            "description": "Activity recommendations based on history and preferences."
           },
           "response": []
         },
@@ -434,7 +472,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "ask"]
             },
-            "description": "Hoi dap ve hoat dong, CLB bang AI. Tra loi tieng Viet."
+            "description": "Q&A about activities and clubs using AI."
           },
           "response": []
         }
@@ -453,7 +491,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "stats", "overview"]
             },
-            "description": "Thong ke tong quan: users, activities, clubs, registrations. Yeu cau ADMIN."
+            "description": "Overview stats: users, activities, clubs, registrations. Requires admin role."
           },
           "response": []
         },
@@ -467,7 +505,86 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "stats", "activities"]
             },
-            "description": "Thong ke hoat dong theo trang thai va danh muc. Yeu cau ADMIN."
+            "description": "Activity stats by status and type. Requires admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.userId) {",
+                  "  pm.collectionVariables.set('createdUserId', res.data.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Nguyen Van B\",\n  \"email\": \"nguyenvanb@example.com\",\n  \"password\": \"Pass@1234\",\n  \"university\": \"Dai hoc Bach Khoa\",\n  \"studentId\": \"SV002\",\n  \"phoneNumber\": \"0987654321\",\n  \"role\": \"student\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Create a single user. role: student | organization_leader | organization_member | admin. Role is auto-assigned to user_roles table. Requires admin role."
+          },
+          "response": []
+        },
+        {
+          "name": "Import Users from CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"csv\": \"userName,email,password,university,studentId,phoneNumber,role\\nNguyen Van C,nguyenvanc@example.com,Pass@1234,Dai hoc Bach Khoa,SV003,0911111111,student\\nTran Thi D,tranthid@example.com,Pass@1234,Dai hoc HUST,SV004,,organization_member\\nLe Van E,levane@example.com,Pass@1234,Dai hoc FPT,,,student\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", "import"]
+            },
+            "description": "Import multiple users from CSV data.\n\nRequired CSV columns: userName, email, password, university\nOptional columns: studentId, phoneNumber, role (default: student)\n\nTwo ways to send:\n1. JSON body: { \"csv\": \"header\\nrow1\\nrow2\" }\n2. Raw CSV: Content-Type: text/csv — send CSV file content directly\n\nResponse: { total, created, failed, createdUsers[], errors[] }\nErrors are collected per row — one bad row does NOT stop the rest."
+          },
+          "response": []
+        },
+        {
+          "name": "Import Users from CSV (raw text/csv)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "text/csv" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "userName,email,password,university,studentId,role\nNguyen Van F,nguyenvanf@example.com,Pass@1234,Dai hoc Bach Khoa,SV005,student\nTran Thi G,tranthig@example.com,Pass@1234,Dai hoc HUST,,organization_member"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", "import"]
+            },
+            "description": "Same as Import Users from CSV but sends raw CSV with Content-Type: text/csv. Useful when uploading a .csv file directly."
           },
           "response": []
         }

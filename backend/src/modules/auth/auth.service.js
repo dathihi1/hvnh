@@ -10,17 +10,23 @@ const {
   decodeToken,
   hashToken,
 } = require("../../utils/jwt");
-const { generateId } = require("../../utils/id");
 const { sendPasswordResetEmail, sendWelcomeEmail } = require("../../utils/mailer");
 const {
-  LOAI_TAI_KHOAN,
-  TRANG_THAI_NGUOI_DUNG,
+  USER_STATUS,
   REDIS_PREFIX,
   RESET_PASSWORD_TTL,
 } = require("../../utils/constants");
 const AppError = require("../../utils/app-error");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const getUserPrimaryRole = async (userId) => {
+  const userRole = await prisma.userRole.findFirst({
+    where: { userId, isDeleted: false },
+    include: { role: true },
+  });
+  return userRole?.role?.code || "student";
+};
 
 const buildTokens = (userId, role) => {
   const payload = { id: userId, role };
@@ -38,73 +44,74 @@ const storeRefreshToken = async (userId, refreshToken) => {
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
-const register = async ({ TenNguoiDung, Email, MatKhau, MaSV, SDT }) => {
-  const existing = await prisma.nguoiDung.findUnique({ where: { Email } });
+const register = async ({ userName, email, password, studentId, phoneNumber, university }) => {
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw new AppError("AUTH_EMAIL_EXISTS");
   }
 
-  const hashed = await bcrypt.hash(MatKhau, 12);
+  const hashed = await bcrypt.hash(password, 12);
 
-  const user = await prisma.nguoiDung.create({
+  const user = await prisma.user.create({
     data: {
-      MaNguoiDung: generateId("ND"),
-      TenNguoiDung,
-      Email,
-      MatKhau: hashed,
-      MaSV: MaSV || null,
-      SDT: SDT || null,
-      LoaiTaiKhoan: LOAI_TAI_KHOAN.SINH_VIEN,
-      TrangThai: TRANG_THAI_NGUOI_DUNG.HOAT_DONG,
+      userName,
+      email,
+      password: hashed,
+      studentId: studentId || null,
+      phoneNumber: phoneNumber || null,
+      university,
+      status: USER_STATUS.ACTIVE,
     },
     select: {
-      MaNguoiDung: true,
-      TenNguoiDung: true,
-      Email: true,
-      LoaiTaiKhoan: true,
-      TrangThai: true,
+      userId: true,
+      userName: true,
+      email: true,
+      university: true,
+      status: true,
     },
   });
 
-  sendWelcomeEmail({ to: Email, name: TenNguoiDung }).catch(() => {});
+  const studentRole = await prisma.role.findUnique({ where: { code: "student" } });
+  if (studentRole) {
+    await prisma.userRole.create({
+      data: { userId: user.userId, roleId: studentRole.roleId },
+    });
+  }
 
-  const { accessToken, refreshToken } = buildTokens(
-    user.MaNguoiDung,
-    user.LoaiTaiKhoan
-  );
-  await storeRefreshToken(user.MaNguoiDung, refreshToken);
+  sendWelcomeEmail({ to: email, name: userName }).catch(() => {});
+
+  const { accessToken, refreshToken } = buildTokens(user.userId, "student");
+  await storeRefreshToken(user.userId, refreshToken);
 
   return { user, accessToken, refreshToken };
 };
 
-const login = async ({ Email, MatKhau }) => {
-  const user = await prisma.nguoiDung.findUnique({ where: { Email } });
+const login = async ({ email, password }) => {
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || !(await bcrypt.compare(MatKhau, user.MatKhau))) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     throw new AppError("AUTH_INVALID_CREDS");
   }
 
-  if (user.TrangThai === TRANG_THAI_NGUOI_DUNG.KHOA) {
+  if (user.status === USER_STATUS.BANNED || user.status === USER_STATUS.SUSPENDED) {
     throw new AppError("AUTH_ACCOUNT_LOCKED");
   }
 
-  if (user.TrangThai === TRANG_THAI_NGUOI_DUNG.CHO_DUYET) {
+  if (user.status === USER_STATUS.INACTIVE) {
     throw new AppError("AUTH_ACCOUNT_PENDING");
   }
 
-  const { accessToken, refreshToken } = buildTokens(
-    user.MaNguoiDung,
-    user.LoaiTaiKhoan
-  );
-  await storeRefreshToken(user.MaNguoiDung, refreshToken);
+  const role = await getUserPrimaryRole(user.userId);
+  const { accessToken, refreshToken } = buildTokens(user.userId, role);
+  await storeRefreshToken(user.userId, refreshToken);
 
   return {
     user: {
-      MaNguoiDung: user.MaNguoiDung,
-      TenNguoiDung: user.TenNguoiDung,
-      Email: user.Email,
-      LoaiTaiKhoan: user.LoaiTaiKhoan,
-      TrangThai: user.TrangThai,
+      userId: user.userId,
+      userName: user.userName,
+      email: user.email,
+      university: user.university,
+      status: user.status,
     },
     accessToken,
     refreshToken,
@@ -146,27 +153,27 @@ const refreshToken = async (token) => {
 };
 
 const forgotPassword = async (email) => {
-  const user = await prisma.nguoiDung.findUnique({ where: { Email: email } });
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || user.isDelete) return;
+  if (!user || user.isDeleted) return;
 
   const resetToken = randomBytes(32).toString("hex");
   await redis.setex(
     `${REDIS_PREFIX.RESET_PASSWORD}${resetToken}`,
     RESET_PASSWORD_TTL,
-    user.MaNguoiDung
+    String(user.userId)
   );
 
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
   await sendPasswordResetEmail({
-    to: user.Email,
-    name: user.TenNguoiDung,
+    to: user.email,
+    name: user.userName,
     resetUrl,
   }).catch(() => {});
 };
 
-const resetPassword = async (token, MatKhauMoi) => {
+const resetPassword = async (token, newPassword) => {
   const redisKey = `${REDIS_PREFIX.RESET_PASSWORD}${token}`;
   const userId = await redis.get(redisKey);
 
@@ -174,30 +181,30 @@ const resetPassword = async (token, MatKhauMoi) => {
     throw new AppError("AUTH_RESET_INVALID");
   }
 
-  const hashed = await bcrypt.hash(MatKhauMoi, 12);
+  const hashed = await bcrypt.hash(newPassword, 12);
 
-  await prisma.nguoiDung.update({
-    where: { MaNguoiDung: userId },
-    data: { MatKhau: hashed },
+  await prisma.user.update({
+    where: { userId: Number(userId) },
+    data: { password: hashed },
   });
 
   await redis.del(redisKey);
 };
 
-const changePassword = async (userId, MatKhauCu, MatKhauMoi) => {
-  const user = await prisma.nguoiDung.findUnique({
-    where: { MaNguoiDung: userId },
+const changePassword = async (userId, oldPassword, newPassword) => {
+  const user = await prisma.user.findUnique({
+    where: { userId },
   });
 
-  if (!(await bcrypt.compare(MatKhauCu, user.MatKhau))) {
+  if (!(await bcrypt.compare(oldPassword, user.password))) {
     throw new AppError("AUTH_WRONG_PASSWORD");
   }
 
-  const hashed = await bcrypt.hash(MatKhauMoi, 12);
+  const hashed = await bcrypt.hash(newPassword, 12);
 
-  await prisma.nguoiDung.update({
-    where: { MaNguoiDung: userId },
-    data: { MatKhau: hashed },
+  await prisma.user.update({
+    where: { userId },
+    data: { password: hashed },
   });
 };
 

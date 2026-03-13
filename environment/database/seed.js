@@ -91,7 +91,7 @@ async function main() {
   await prisma.organizationMember.upsert({
     where:  { userId_organizationId: { userId: users["organization_leader"].userId, organizationId: org.organizationId } },
     update: {},
-    create: { userId: users["organization_leader"].userId, organizationId: org.organizationId, role: "leader" },
+    create: { userId: users["organization_leader"].userId, organizationId: org.organizationId, role: "president" },
   });
 
   await prisma.organizationMember.upsert({
@@ -100,22 +100,31 @@ async function main() {
     create: { userId: users["organization_member"].userId, organizationId: org.organizationId, role: "member" },
   });
 
-  // ── 4. Activity ──────────────────────────────────────────────────────────────
+  // ── 4. Activity Category ─────────────────────────────────────────────────────
+  const category = await prisma.activityCategory.upsert({
+    where:  { categoryName: "Technology" },
+    update: {},
+    create: { categoryName: "Technology", createdBy: users["admin"].userId },
+  });
+  console.log(`  Category: ${category.categoryName} (id=${category.categoryId})`);
+
+  // ── 5. Activity ──────────────────────────────────────────────────────────────
   const existingActivity = await prisma.activity.findFirst({ where: { activityName: "Tech Hackathon 2026" } });
   let activity;
   if (!existingActivity) {
     activity = await prisma.activity.create({
       data: {
-        activityName:   "Tech Hackathon 2026",
-        location:       "Main Hall, Building A",
-        type:           "competition",
-        description:    "Annual hackathon for students. Build something amazing in 24 hours.",
-        startTime:      new Date("2026-04-01T08:00:00Z"),
-        endTime:        new Date("2026-04-02T08:00:00Z"),
-        maxParticipants: 100,
-        approvalStatus: "approved",
-        organizationId: org.organizationId,
-        createdBy:      users["organization_leader"].userId,
+        activityName:        "Tech Hackathon 2026",
+        location:            "Main Hall, Building A",
+        activityType:        "competition",
+        description:         "Annual hackathon for students. Build something amazing in 24 hours.",
+        startTime:           new Date("2026-04-01T08:00:00Z"),
+        endTime:             new Date("2026-04-02T08:00:00Z"),
+        registrationDeadline: new Date("2026-03-25T23:59:59Z"),
+        maxParticipants:     100,
+        organizationId:      org.organizationId,
+        categoryId:          category.categoryId,
+        createdBy:           users["organization_leader"].userId,
       },
     });
     console.log(`  Activity: ${activity.activityName} (id=${activity.activityId})`);
@@ -123,99 +132,6 @@ async function main() {
     activity = existingActivity;
     console.log(`  Activity: already exists (id=${activity.activityId})`);
   }
-
-  // ── 5. Open Form ─────────────────────────────────────────────────────────────
-  const existingForm = await prisma.form.findFirst({ where: { title: "Hackathon Registration Form" } });
-  if (!existingForm) {
-    const form = await prisma.form.create({
-      data: {
-        title:             "Hackathon Registration Form",
-        description:       "Register for Tech Hackathon 2026",
-        status:            "open",
-        collectEmail:      true,
-        limitOneResponse:  false,
-        allowEditResponse: false,
-        requireSignIn:     true,
-        activityId:        activity.activityId,
-        createdBy:         users["organization_leader"].userId,
-        sections: {
-          create: [
-            {
-              title: "Personal Information",
-              order: 0,
-              navigationType: "next",
-              questions: {
-                create: [
-                  {
-                    title:    "Full Name",
-                    type:     "short_text",
-                    order:    0,
-                    required: true,
-                  },
-                  {
-                    title:    "Student ID",
-                    type:     "short_text",
-                    order:    1,
-                    required: true,
-                  },
-                  {
-                    title:    "Which track are you interested in?",
-                    type:     "multiple_choice",
-                    order:    2,
-                    required: true,
-                    options: {
-                      create: [
-                        { label: "Web Development",   order: 0 },
-                        { label: "Mobile App",        order: 1 },
-                        { label: "AI / Machine Learning", order: 2 },
-                        { label: "Cybersecurity",     order: 3 },
-                      ],
-                    },
-                  },
-                  {
-                    title:    "Tell us about yourself",
-                    type:     "paragraph",
-                    order:    3,
-                    required: false,
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    });
-    console.log(`  Form: ${form.title} (id=${form.formId})`);
-  } else {
-    console.log(`  Form: already exists (id=${existingForm.formId})`);
-  }
-
-  // ── 6. Permissions ───────────────────────────────────────────────────────────
-  const permissions = [
-    { code: "users:read",          name: "Read Users",         resource: "users",          action: "read" },
-    { code: "users:write",         name: "Write Users",        resource: "users",          action: "write" },
-    { code: "activities:read",     name: "Read Activities",    resource: "activities",     action: "read" },
-    { code: "activities:write",    name: "Write Activities",   resource: "activities",     action: "write" },
-    { code: "forms:read",          name: "Read Forms",         resource: "forms",          action: "read" },
-    { code: "forms:write",         name: "Write Forms",        resource: "forms",          action: "write" },
-    { code: "notifications:send",  name: "Send Notifications", resource: "notifications",  action: "send" },
-  ];
-
-  for (const p of permissions) {
-    const perm = await prisma.permission.upsert({
-      where:  { code: p.code },
-      update: {},
-      create: p,
-    });
-
-    // Assign all permissions to admin role
-    await prisma.rolePermission.upsert({
-      where:  { roleId_permissionId: { roleId: roles["admin"].roleId, permissionId: perm.permissionId } },
-      update: {},
-      create: { roleId: roles["admin"].roleId, permissionId: perm.permissionId },
-    });
-  }
-  console.log(`  Permissions: ${permissions.length} created and assigned to admin`);
 
   console.log("\nSeed complete.");
   console.log("\nTest accounts:");

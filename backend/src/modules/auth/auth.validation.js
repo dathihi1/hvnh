@@ -1,30 +1,31 @@
 const { z } = require("zod");
 
 const registerSchema = z.object({
-  TenNguoiDung: z.string().min(2, "Tên phải có ít nhất 2 ký tự").max(255),
-  Email: z.string().email("Email không hợp lệ"),
-  MatKhau: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-  MaSV: z.string().max(50).optional(),
-  SDT: z.string().max(20).optional(),
+  userName: z.string().min(2, "Name must be at least 2 characters").max(255),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  university: z.string().min(1, "University is required").max(255),
+  studentId: z.string().max(50).optional(),
+  phoneNumber: z.string().max(20).optional(),
 });
 
 const loginSchema = z.object({
-  Email: z.string().email("Email không hợp lệ"),
-  MatKhau: z.string().min(1, "Vui lòng nhập mật khẩu"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const forgotPasswordSchema = z.object({
-  Email: z.string().email("Email không hợp lệ"),
+  email: z.string().email("Invalid email"),
 });
 
 const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Token không hợp lệ"),
-  MatKhauMoi: z.string().min(6, "Mật khẩu mới phải có ít nhất 6 ký tự"),
+  token: z.string().min(1, "Invalid token"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
 });
 
 const changePasswordSchema = z.object({
-  MatKhauCu: z.string().min(1, "Vui lòng nhập mật khẩu cũ"),
-  MatKhauMoi: z.string().min(6, "Mật khẩu mới phải có ít nhất 6 ký tự"),
+  oldPassword: z.string().min(1, "Old password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
 });
 
 module.exports = {

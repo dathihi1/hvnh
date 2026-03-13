@@ -5,7 +5,7 @@ const rateLimit = require("express-rate-limit");
 
 const errorMiddleware = require("./middlewares/error.middleware");
 const authRoutes = require("./modules/auth/auth.route");
-const thongBaoRoutes = require("./modules/thong-bao/thong-bao.route");
+const notificationsRoutes = require("./modules/notifications/notifications.route");
 const adminRoutes = require("./modules/admin/admin.route");
 const aiRoutes = require("./modules/ai/ai.route");
 
@@ -47,7 +47,7 @@ app.get("/health", (req, res) => {
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 
-app.use("/api/thong-bao", thongBaoRoutes);
+app.use("/api/notifications", notificationsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 

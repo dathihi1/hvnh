@@ -21,8 +21,8 @@ const login = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    await authService.logout(req.token, req.user.MaNguoiDung);
-    return success(res, { message: "Đăng xuất thành công" });
+    await authService.logout(req.token, req.user.userId);
+    return success(res, { message: "Logout successful" });
   } catch (err) {
     next(err);
   }
@@ -34,7 +34,7 @@ const refreshToken = async (req, res, next) => {
     if (!refreshToken) {
       return res
         .status(400)
-        .json({ success: false, error: "Thiếu refresh token" });
+        .json({ success: false, error: "Missing refresh token" });
     }
     const result = await authService.refreshToken(refreshToken);
     return success(res, result);
@@ -45,10 +45,9 @@ const refreshToken = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    await authService.forgotPassword(req.body.Email);
-    // Luôn trả về thành công để tránh email enumeration
+    await authService.forgotPassword(req.body.email);
     return success(res, {
-      message: "Nếu email tồn tại, link khôi phục đã được gửi",
+      message: "If the email exists, a reset link has been sent",
     });
   } catch (err) {
     next(err);
@@ -57,8 +56,8 @@ const forgotPassword = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
   try {
-    await authService.resetPassword(req.body.token, req.body.MatKhauMoi);
-    return success(res, { message: "Đặt lại mật khẩu thành công" });
+    await authService.resetPassword(req.body.token, req.body.newPassword);
+    return success(res, { message: "Password reset successful" });
   } catch (err) {
     next(err);
   }
@@ -67,11 +66,11 @@ const resetPassword = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
   try {
     await authService.changePassword(
-      req.user.MaNguoiDung,
-      req.body.MatKhauCu,
-      req.body.MatKhauMoi
+      req.user.userId,
+      req.body.oldPassword,
+      req.body.newPassword
     );
-    return success(res, { message: "Đổi mật khẩu thành công" });
+    return success(res, { message: "Password changed successfully" });
   } catch (err) {
     next(err);
   }

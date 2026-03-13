@@ -1,51 +1,41 @@
-const LOAI_TAI_KHOAN = {
-  SINH_VIEN: "SINH_VIEN",
-  CHU_CLB: "CHU_CLB",
-  ADMIN: "ADMIN",
+const USER_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  BANNED: "banned",
+  SUSPENDED: "suspended",
 };
 
-const TRANG_THAI_NGUOI_DUNG = {
-  HOAT_DONG: "HOAT_DONG",
-  KHOA: "KHOA",
-  CHO_DUYET: "CHO_DUYET",
+const ROLE_CODE = {
+  ADMIN: "admin",
+  STUDENT: "student",
+  ORGANIZATION_LEADER: "organization_leader",
+  ORGANIZATION_MEMBER: "organization_member",
 };
 
-const TRANG_THAI_HOAT_DONG = {
-  SAP_DIEN_RA: "SAP_DIEN_RA",
-  DANG_DIEN_RA: "DANG_DIEN_RA",
-  DA_KET_THUC: "DA_KET_THUC",
-  DA_HUY: "DA_HUY",
+const ACTIVITY_STATUS = {
+  DRAFT: "draft",
+  PUBLISHED: "published",
+  RUNNING: "running",
+  FINISHED: "finished",
+  CANCELLED: "cancelled",
 };
 
-const TRANG_THAI_PHIEU_DANG_KY = {
-  CHO_DUYET: "CHO_DUYET",
-  DA_DUYET: "DA_DUYET",
-  TU_CHOI: "TU_CHOI",
-  DA_HUY: "DA_HUY",
+const REGISTRATION_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  CANCELLED: "cancelled",
 };
 
-const TRANG_THAI_DOT_TUYEN = {
-  DANG_MO: "DANG_MO",
-  DA_DONG: "DA_DONG",
-  DA_KET_THUC: "DA_KET_THUC",
+const NOTIFICATION_STATUS = {
+  UNREAD: "unread",
+  READ: "read",
 };
 
-const TRANG_THAI_THONG_BAO = {
-  CHUA_DOC: "CHUA_DOC",
-  DA_DOC: "DA_DOC",
-};
-
-const LOAI_THONG_BAO = {
-  HE_THONG: "HE_THONG",
-  HOAT_DONG: "HOAT_DONG",
-  CLB: "CLB",
-  TUYEN_DUNG: "TUYEN_DUNG",
-};
-
-const KENH_THONG_BAO = {
-  IN_APP: "IN_APP",
-  EMAIL: "EMAIL",
-  SMS: "SMS",
+const NOTIFICATION_TYPE = {
+  ACTIVITY: "activity",
+  REGISTRATION: "registration",
+  SYSTEM: "system",
 };
 
 const REDIS_PREFIX = {
@@ -59,14 +49,12 @@ const RESET_PASSWORD_TTL = 15 * 60;
 const NOTIFICATION_QUEUE_NAME = "notification-queue";
 
 module.exports = {
-  LOAI_TAI_KHOAN,
-  TRANG_THAI_NGUOI_DUNG,
-  TRANG_THAI_HOAT_DONG,
-  TRANG_THAI_PHIEU_DANG_KY,
-  TRANG_THAI_DOT_TUYEN,
-  TRANG_THAI_THONG_BAO,
-  LOAI_THONG_BAO,
-  KENH_THONG_BAO,
+  USER_STATUS,
+  ROLE_CODE,
+  ACTIVITY_STATUS,
+  REGISTRATION_STATUS,
+  NOTIFICATION_STATUS,
+  NOTIFICATION_TYPE,
   REDIS_PREFIX,
   RESET_PASSWORD_TTL,
   NOTIFICATION_QUEUE_NAME,

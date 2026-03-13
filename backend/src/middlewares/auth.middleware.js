@@ -1,7 +1,7 @@
 const { verifyAccessToken, hashToken } = require("../utils/jwt");
 const { redis } = require("../config/redis");
 const prisma = require("../config/prisma");
-const { REDIS_PREFIX } = require("../utils/constants");
+const { REDIS_PREFIX, USER_STATUS } = require("../utils/constants");
 const AppError = require("../utils/app-error");
 
 const protect = async (req, res, next) => {
@@ -28,14 +28,18 @@ const protect = async (req, res, next) => {
     const decoded = verifyAccessToken(token);
 
     // Check user
-    const user = await prisma.nguoiDung.findFirst({
-      where: { MaNguoiDung: decoded.id, isDelete: false },
+    const user = await prisma.user.findFirst({
+      where: { userId: decoded.id, isDeleted: false },
       select: {
-        MaNguoiDung: true,
-        TenNguoiDung: true,
-        Email: true,
-        LoaiTaiKhoan: true,
-        TrangThai: true,
+        userId: true,
+        userName: true,
+        email: true,
+        university: true,
+        status: true,
+        userRoles: {
+          where: { isDeleted: false },
+          select: { role: { select: { code: true } } },
+        },
       },
     });
 
@@ -43,15 +47,22 @@ const protect = async (req, res, next) => {
       throw new AppError("USER_NOT_FOUND");
     }
 
-    if (user.TrangThai === "KHOA") {
+    if (user.status === USER_STATUS.BANNED || user.status === USER_STATUS.SUSPENDED) {
       throw new AppError("AUTH_ACCOUNT_LOCKED");
     }
 
-    if (user.TrangThai === "CHO_DUYET") {
+    if (user.status === USER_STATUS.INACTIVE) {
       throw new AppError("AUTH_ACCOUNT_PENDING");
     }
 
-    req.user = user;
+    req.user = {
+      userId: user.userId,
+      userName: user.userName,
+      email: user.email,
+      university: user.university,
+      status: user.status,
+      roles: user.userRoles.map((ur) => ur.role.code),
+    };
     req.token = token;
     next();
   } catch (err) {
