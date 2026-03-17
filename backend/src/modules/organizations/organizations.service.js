@@ -6,7 +6,7 @@ const prisma = require("../../config/prisma");
  * ======================================
  */
 
-const createOrganizationService = async (data, user) => {
+const createOrganizationService = async (data) => {
   //chỉ admin mới có thể tạo organization
   // if (!user || user.role !== "admin") {
   //   throw new Error("Only admin can create organization");
@@ -41,7 +41,7 @@ const createOrganizationService = async (data, user) => {
  * Get Organizations, mặc định lấy ra 10 organizations mới nhất
  * ======================================
  */
-const getOrganizationsService = async (user) => {
+const getOrganizationsService = async (limit = 10) => {
   // if (!user || user.role !== "admin") {
   //   throw new Error("Only admin can get organization");
   // }
@@ -52,7 +52,7 @@ const getOrganizationsService = async (user) => {
     orderBy: {
       createdAt: "desc",
     },
-    take: 10, // chỉ lấy 10 bản ghi
+    take: limit, // chỉ lấy limit bản ghi
   });
 };
 
@@ -101,11 +101,40 @@ const getOrganizationsServiceByName = async (query) => {
     take: limit,
   });
 };
+//get by type
+
+const getOrganizationsServiceByType = async (query) => {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+
+  const skip = (page - 1) * limit;
+
+  const where = {
+    isDeleted: false,
+  };
+
+  if (query.name) {
+    where.organizationType = {
+      contains: query.type,
+      mode: "insensitive", // không phân biệt hoa thường
+    };
+  }
+
+  return prisma.organization.findMany({
+    where,
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip,
+    take: limit,
+  });
+};
 /**
  * ======================================
  * Update Organization
  * ======================================
  */
+
 const updateOrganizationService = async (organizationId, data) => {
   return prisma.organization.update({
     where: {
@@ -144,6 +173,7 @@ module.exports = {
   getOrganizationsService,
   getOrganizationByIdService,
   getOrganizationsServiceByName,
+  getOrganizationsServiceByType,
   updateOrganizationService,
   deleteOrganizationService,
 };

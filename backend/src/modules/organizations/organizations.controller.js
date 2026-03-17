@@ -3,6 +3,7 @@ const {
   getOrganizationsService,
   getOrganizationByIdService,
   getOrganizationsServiceByName,
+  getOrganizationsServiceByType,
   updateOrganizationService,
   deleteOrganizationService,
 } = require("./organizations.service");
@@ -14,7 +15,7 @@ const {
  */
 const createOrganizationController = async (req, res, next) => {
   try {
-    const organization = await createOrganizationService(req.body);
+    const organization = await createOrganizationService(req.body, req.user);
 
     res.status(201).json({
       success: true,
@@ -32,7 +33,9 @@ const createOrganizationController = async (req, res, next) => {
  */
 const getOrganizationsController = async (req, res, next) => {
   try {
-    const organizations = await getOrganizationsService();
+    const limit = parseInt(req.query.limit) || 10;
+
+    const organizations = await getOrganizationsService(limit);
 
     res.json({
       success: true,
@@ -67,9 +70,7 @@ const getOrganizationByIdController = async (req, res, next) => {
 //Get Organization by name
 const getOrganizationsByNameController = async (req, res) => {
   try {
-    const { name } = req.query;
-
-    const organizations = await getOrganizationsServiceByName(name);
+    const organizations = await getOrganizationsServiceByName(req.query);
 
     return res.status(200).json({
       success: true,
@@ -77,6 +78,25 @@ const getOrganizationsByNameController = async (req, res) => {
     });
   } catch (error) {
     console.log(req.query);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+//get Organizations by type
+const getOrganizationsByTypeController = async (req, res) => {
+  try {
+    const organizations = await getOrganizationsServiceByType(req.query);
+
+    return res.status(200).json({
+      success: true,
+      data: organizations,
+    });
+  } catch (error) {
+    console.log(req.query);
+
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -126,6 +146,7 @@ module.exports = {
   getOrganizationsController,
   getOrganizationByIdController,
   getOrganizationsByNameController,
+  getOrganizationsByTypeController,
   updateOrganizationController,
   deleteOrganizationController,
 };
