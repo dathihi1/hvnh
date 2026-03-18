@@ -5,26 +5,18 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
-    },
-    {
-      "key": "accessToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "notificationId",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "notificationId", "value": "", "type": "string" },
+    { "key": "userId", "value": "1", "type": "string" },
+    { "key": "organizationId", "value": "1", "type": "string" },
+    { "key": "activityId", "value": "1", "type": "string" },
+    { "key": "categoryId", "value": "1", "type": "string" },
+    { "key": "registrationId", "value": "1", "type": "string" },
+    { "key": "applicationId", "value": "1", "type": "string" },
+    { "key": "checkinSessionId", "value": "1", "type": "string" },
+    { "key": "memberId", "value": "2", "type": "string" }
   ],
   "item": [
     {
@@ -40,8 +32,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["health"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -63,8 +54,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "register"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Login",
@@ -76,12 +66,9 @@
                 "exec": [
                   "const res = pm.response.json();",
                   "if (res.success && res.data) {",
-                  "  if (res.data.accessToken) {",
-                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
-                  "  }",
-                  "  if (res.data.refreshToken) {",
-                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
-                  "  }",
+                  "  if (res.data.accessToken) pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "  if (res.data.refreshToken) pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  if (res.data.user && res.data.user.userId) pm.collectionVariables.set('userId', String(res.data.user.userId));",
                   "}"
                 ]
               }
@@ -100,9 +87,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Login. Token is automatically saved to collection variables."
-          },
-          "response": []
+            "description": "Login. Token + userId auto-saved."
+          }
         },
         {
           "name": "Login (Admin)",
@@ -114,12 +100,9 @@
                 "exec": [
                   "const res = pm.response.json();",
                   "if (res.success && res.data) {",
-                  "  if (res.data.accessToken) {",
-                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
-                  "  }",
-                  "  if (res.data.refreshToken) {",
-                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
-                  "  }",
+                  "  if (res.data.accessToken) pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "  if (res.data.refreshToken) pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "  if (res.data.user && res.data.user.userId) pm.collectionVariables.set('userId', String(res.data.user.userId));",
                   "}"
                 ]
               }
@@ -138,9 +121,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Login as admin. Token is automatically saved to collection variables."
-          },
-          "response": []
+            "description": "Login as admin. Token + userId auto-saved."
+          }
         },
         {
           "name": "Refresh Token",
@@ -171,8 +153,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "refresh-token"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Forgot Password",
@@ -189,8 +170,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "forgot-password"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Reset Password",
@@ -207,8 +187,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "reset-password"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Me",
@@ -220,8 +199,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "me"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Logout",
@@ -233,8 +211,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "logout"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Change Password",
@@ -254,8 +231,947 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "change-password"]
             }
-          },
-          "response": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "active", "disabled": true },
+                { "key": "university", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Admin: list all users with search/filter/pagination."
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Nguyen Van A Updated\",\n  \"phoneNumber\": \"0999888777\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get My Activities",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/activities?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me", "activities"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Get registrations/activities for current user."
+          }
+        },
+        {
+          "name": "Get My Organizations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me", "organizations"]
+            },
+            "description": "Get organizations that current user is a member of."
+          }
+        },
+        {
+          "name": "Update User Status (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "status"]
+            },
+            "description": "Admin: change user status (active/inactive/banned/suspended)."
+          }
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Admin: soft-delete a user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Get Organizations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "organizationType", "value": "club", "disabled": true }
+              ]
+            },
+            "description": "List organizations with search/filter/pagination."
+          }
+        },
+        {
+          "name": "Get Organization By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Organization (Admin/Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.organizationId) {",
+                  "  pm.collectionVariables.set('organizationId', String(res.data.organizationId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"CLB Lap Trinh\",\n  \"organizationType\": \"club\",\n  \"description\": \"Cau lac bo lap trinh, nghien cuu cong nghe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations"]
+            },
+            "description": "Create org. Creator is auto-added as president. Types: university, club, department, company."
+          }
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"CLB Lap Trinh - Updated description\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Organization (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Members",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{memberId}},\n  \"role\": \"member\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members"]
+            },
+            "description": "Roles: president, vice_president, head_of_department, vice_head, member."
+          }
+        },
+        {
+          "name": "Update Member Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"vice_president\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members", "{{memberId}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members", "{{memberId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "item": [
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.categoryId) {",
+                  "  pm.collectionVariables.set('categoryId', String(res.data.categoryId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryName\": \"The thao\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Activities",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "categoryId", "value": "", "disabled": true },
+                { "key": "organizationId", "value": "", "disabled": true },
+                { "key": "activityStatus", "value": "published", "disabled": true },
+                { "key": "activityType", "value": "program", "disabled": true },
+                { "key": "sortBy", "value": "createdAt", "disabled": true },
+                { "key": "sortOrder", "value": "desc", "disabled": true }
+              ]
+            },
+            "description": "List activities with search, filter by category/org/status/type, pagination, sorting."
+          }
+        },
+        {
+          "name": "Get Activity By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Activity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.activityId) {",
+                  "  pm.collectionVariables.set('activityId', String(res.data.activityId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityName\": \"Giai Bong Da SV 2026\",\n  \"description\": \"Giai bong da sinh vien thuong nien\",\n  \"location\": \"San van dong A\",\n  \"activityType\": \"competition\",\n  \"teamMode\": \"team\",\n  \"startTime\": \"2026-04-01T08:00:00Z\",\n  \"endTime\": \"2026-04-03T17:00:00Z\",\n  \"registrationDeadline\": \"2026-03-28T23:59:00Z\",\n  \"minParticipants\": 4,\n  \"maxParticipants\": 32,\n  \"prize\": \"Cup vang + 5 trieu VND\",\n  \"organizationId\": {{organizationId}},\n  \"categoryId\": {{categoryId}},\n  \"teamRule\": {\n    \"minTeamMembers\": 5,\n    \"maxTeamMembers\": 11\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities"]
+            },
+            "description": "Types: program, competition, recruitment. teamMode: individual, team, both. Status starts as draft."
+          }
+        },
+        {
+          "name": "Create Activity (Recruitment)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.activityId) {",
+                  "  pm.collectionVariables.set('activityId', String(res.data.activityId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityName\": \"Tuyen Thanh Vien CLB Lap Trinh 2026\",\n  \"description\": \"Dot tuyen thanh vien moi cho CLB Lap Trinh\",\n  \"activityType\": \"recruitment\",\n  \"teamMode\": \"individual\",\n  \"startTime\": \"2026-04-05T08:00:00Z\",\n  \"endTime\": \"2026-04-20T23:59:00Z\",\n  \"registrationDeadline\": \"2026-04-15T23:59:00Z\",\n  \"organizationId\": {{organizationId}},\n  \"categoryId\": {{categoryId}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities"]
+            },
+            "description": "Create a recruitment activity for club member recruitment. Use this activityId for Club Applications."
+          }
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"location\": \"San van dong B\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}"]
+            },
+            "description": "Only editable when status is draft or published."
+          }
+        },
+        {
+          "name": "Update Activity Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityStatus\": \"published\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}", "status"]
+            },
+            "description": "State machine: draft->published->running->finished. Any state->cancelled."
+          }
+        },
+        {
+          "name": "Delete Activity",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Checkin Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.checkinId) {",
+                  "  pm.collectionVariables.set('checkinSessionId', String(res.data.checkinId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkInTime\": \"2026-04-01T08:00:00Z\",\n  \"checkOutTime\": \"2026-04-01T12:00:00Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}/checkin-sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}", "checkin-sessions"]
+            },
+            "description": "Create a checkin time window for an activity."
+          }
+        },
+        {
+          "name": "Get Checkin Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/activities/{{activityId}}/checkin-sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "activities", "{{activityId}}", "checkin-sessions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "Create Registration (Individual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.registrationId) {",
+                  "  pm.collectionVariables.set('registrationId', String(res.data.registrationId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": {{activityId}},\n  \"registrationType\": \"individual\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations"]
+            },
+            "description": "Register for an activity. Activity must be published/running and before deadline."
+          }
+        },
+        {
+          "name": "Create Registration (Group)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.registrationId) {",
+                  "  pm.collectionVariables.set('registrationId', String(res.data.registrationId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": {{activityId}},\n  \"registrationType\": \"group\",\n  \"teamName\": \"Team Alpha\",\n  \"isLookingForTeam\": false,\n  \"teamMembers\": [\n    { \"userId\": {{memberId}}, \"role\": \"member\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations"]
+            },
+            "description": "Group registration. Creator auto-added as leader. teamMembers optional."
+          }
+        },
+        {
+          "name": "Get My Registrations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/my?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "my"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "pending", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Registration By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/{{registrationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "{{registrationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Registration",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/{{registrationId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "{{registrationId}}", "cancel"]
+            },
+            "description": "Cancel own registration. Only pending or approved can be cancelled."
+          }
+        },
+        {
+          "name": "Get Registrations By Activity (Admin/Leader)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/activity/{{activityId}}?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "activity", "{{activityId}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "pending", "disabled": true }
+              ]
+            },
+            "description": "Admin/Leader: list all registrations for an activity."
+          }
+        },
+        {
+          "name": "Get Activity Participant Stats (Admin/Leader)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/activity/{{activityId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "activity", "{{activityId}}", "stats"]
+            },
+            "description": "Stats: total, pending, approved, rejected, cancelled, checkedIn, maxParticipants."
+          }
+        },
+        {
+          "name": "Approve/Reject Registration (Admin/Leader)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/{{registrationId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "{{registrationId}}", "status"]
+            },
+            "description": "Status: approved or rejected."
+          }
+        },
+        {
+          "name": "Bulk Update Status (Admin/Leader)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registrationIds\": [1, 2, 3],\n  \"status\": \"approved\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/bulk-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "bulk-status"]
+            },
+            "description": "Batch approve/reject multiple registrations at once."
+          }
+        },
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityCheckinId\": {{checkinSessionId}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/{{registrationId}}/checkin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "{{registrationId}}", "checkin"]
+            },
+            "description": "Check in to a checkin session. Registration must be approved."
+          }
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityCheckinId\": {{checkinSessionId}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations/{{registrationId}}/checkout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations", "{{registrationId}}", "checkout"]
+            },
+            "description": "Check out from a checkin session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Club Applications",
+      "item": [
+        {
+          "name": "Create Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.applicationId) {",
+                  "  pm.collectionVariables.set('applicationId', String(res.data.applicationId));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activityId\": {{activityId}},\n  \"note\": \"Em rat muon tham gia CLB\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications"]
+            },
+            "description": "Apply for a club via a recruitment activity."
+          }
+        },
+        {
+          "name": "Get My Applications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "my"]
+            }
+          }
+        },
+        {
+          "name": "Get Application By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Applications By Activity (Admin/Leader)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/activity/{{activityId}}?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "activity", "{{activityId}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "result", "value": "pending", "disabled": true }
+              ]
+            },
+            "description": "Admin/Leader: list applications for a recruitment activity."
+          }
+        },
+        {
+          "name": "Update Application (Interview)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"result\": \"interview\",\n  \"interviewTime\": \"2026-04-10T14:00:00Z\",\n  \"note\": \"Phong van tai phong A101\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "{{applicationId}}"]
+            },
+            "description": "Schedule interview for an applicant."
+          }
+        },
+        {
+          "name": "Accept Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"result\": \"accepted\",\n  \"note\": \"Chuc mung ban da trung tuyen!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "{{applicationId}}"]
+            },
+            "description": "Accept applicant. Auto-adds them as organization member."
+          }
+        },
+        {
+          "name": "Reject Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"result\": \"rejected\",\n  \"note\": \"Cam on ban da ung tuyen\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "{{applicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Application (Withdraw)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/club-applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "club-applications", "{{applicationId}}"]
+            },
+            "description": "Withdraw own application. Only works if still pending."
+          }
         }
       ]
     },
@@ -294,12 +1210,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "send"]
             },
-            "description": "Send notification to a single user. channels: IN_APP, EMAIL, SMS. Requires role admin or organization_leader."
-          },
-          "response": []
+            "description": "Send notification. channels: IN_APP, EMAIL, SMS."
+          }
         },
         {
-          "name": "Send Bulk Notification (admin/organization_leader)",
+          "name": "Send Bulk Notification",
           "request": {
             "method": "POST",
             "header": [
@@ -308,7 +1223,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Broadcast Notification\",\n  \"content\": \"Content for all users\",\n  \"notificationType\": \"system\",\n  \"channels\": [\"IN_APP\", \"EMAIL\"],\n  \"sendToAll\": true\n}",
+              "raw": "{\n  \"title\": \"Broadcast\",\n  \"content\": \"Content for all\",\n  \"notificationType\": \"system\",\n  \"channels\": [\"IN_APP\"],\n  \"sendToAll\": true\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -316,9 +1231,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "send-bulk"]
             },
-            "description": "Send bulk notification. Target: sendToAll=true (all users), organizationId (club members), userIds (specific list). Use scheduledAt for scheduled delivery."
-          },
-          "response": []
+            "description": "Target: sendToAll, organizationId, or userIds array."
+          }
         },
         {
           "name": "Get My Notifications",
@@ -335,10 +1249,8 @@
                 { "key": "notificationType", "value": "system", "disabled": true },
                 { "key": "status", "value": "unread", "disabled": true }
               ]
-            },
-            "description": "Get paginated notifications for current user. Filter by notificationType (system/activity/registration) and status (unread/read)."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Get Unread Count",
@@ -350,8 +1262,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "stats"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Get Notification By ID",
@@ -363,8 +1274,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "{{notificationId}}"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Mark As Read",
@@ -376,8 +1286,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "{{notificationId}}", "read"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Mark All As Read",
@@ -389,8 +1298,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "read-all"]
             }
-          },
-          "response": []
+          }
         },
         {
           "name": "Delete Notification",
@@ -402,8 +1310,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "notifications", "{{notificationId}}"]
             }
-          },
-          "response": []
+          }
         }
       ]
     },
@@ -427,10 +1334,8 @@
               "raw": "{{baseUrl}}/api/ai/search",
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "search"]
-            },
-            "description": "Smart activity search using AI (Gemini)."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Recommendations",
@@ -449,10 +1354,8 @@
               "raw": "{{baseUrl}}/api/ai/recommend",
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "recommend"]
-            },
-            "description": "Activity recommendations based on history and preferences."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Ask Q&A",
@@ -471,10 +1374,8 @@
               "raw": "{{baseUrl}}/api/ai/ask",
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "ask"]
-            },
-            "description": "Q&A about activities and clubs using AI."
-          },
-          "response": []
+            }
+          }
         }
       ]
     },
@@ -490,10 +1391,8 @@
               "raw": "{{baseUrl}}/api/admin/stats/overview",
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "stats", "overview"]
-            },
-            "description": "Overview stats: users, activities, clubs, registrations. Requires admin role."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Activity Stats",
@@ -504,27 +1403,11 @@
               "raw": "{{baseUrl}}/api/admin/stats/activities",
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "stats", "activities"]
-            },
-            "description": "Activity stats by status and type. Requires admin role."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Create User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const res = pm.response.json();",
-                  "if (res.success && res.data && res.data.userId) {",
-                  "  pm.collectionVariables.set('createdUserId', res.data.userId);",
-                  "}"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -540,10 +1423,8 @@
               "raw": "{{baseUrl}}/api/admin/users",
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "users"]
-            },
-            "description": "Create a single user. role: student | organization_leader | organization_member | admin. Role is auto-assigned to user_roles table. Requires admin role."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Import Users from CSV",
@@ -555,38 +1436,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"csv\": \"userName,email,password,university,studentId,phoneNumber,role\\nNguyen Van C,nguyenvanc@example.com,Pass@1234,Dai hoc Bach Khoa,SV003,0911111111,student\\nTran Thi D,tranthid@example.com,Pass@1234,Dai hoc HUST,SV004,,organization_member\\nLe Van E,levane@example.com,Pass@1234,Dai hoc FPT,,,student\"\n}",
+              "raw": "{\n  \"csv\": \"userName,email,password,university,studentId,phoneNumber,role\\nNguyen Van C,nguyenvanc@example.com,Pass@1234,Dai hoc Bach Khoa,SV003,0911111111,student\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/users/import",
               "host": ["{{baseUrl}}"],
               "path": ["api", "admin", "users", "import"]
-            },
-            "description": "Import multiple users from CSV data.\n\nRequired CSV columns: userName, email, password, university\nOptional columns: studentId, phoneNumber, role (default: student)\n\nTwo ways to send:\n1. JSON body: { \"csv\": \"header\\nrow1\\nrow2\" }\n2. Raw CSV: Content-Type: text/csv — send CSV file content directly\n\nResponse: { total, created, failed, createdUsers[], errors[] }\nErrors are collected per row — one bad row does NOT stop the rest."
-          },
-          "response": []
-        },
-        {
-          "name": "Import Users from CSV (raw text/csv)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "text/csv" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "userName,email,password,university,studentId,role\nNguyen Van F,nguyenvanf@example.com,Pass@1234,Dai hoc Bach Khoa,SV005,student\nTran Thi G,tranthig@example.com,Pass@1234,Dai hoc HUST,,organization_member"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/admin/users/import",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "admin", "users", "import"]
-            },
-            "description": "Same as Import Users from CSV but sends raw CSV with Content-Type: text/csv. Useful when uploading a .csv file directly."
-          },
-          "response": []
+            }
+          }
         }
       ]
     }

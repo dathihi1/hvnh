@@ -5,6 +5,11 @@ const rateLimit = require("express-rate-limit");
 
 const errorMiddleware = require("./middlewares/error.middleware");
 const authRoutes = require("./modules/auth/auth.route");
+const usersRoutes = require("./modules/users/users.route");
+const organizationsRoutes = require("./modules/organizations/organizations.route");
+const activitiesRoutes = require("./modules/activities/activities.route");
+const registrationsRoutes = require("./modules/registrations/registrations.route");
+const clubApplicationsRoutes = require("./modules/club-applications/club-applications.route");
 const notificationsRoutes = require("./modules/notifications/notifications.route");
 const adminRoutes = require("./modules/admin/admin.route");
 const aiRoutes = require("./modules/ai/ai.route");
@@ -46,17 +51,14 @@ app.get("/health", (req, res) => {
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
-
+app.use("/api/users", usersRoutes);
+app.use("/api/organizations", organizationsRoutes);
+app.use("/api/activities", activitiesRoutes);
+app.use("/api/registrations", registrationsRoutes);
+app.use("/api/club-applications", clubApplicationsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
-
-// TODO: add more module routes here
-// app.use("/api/nguoi-dung", nguoiDungRoutes);
-// app.use("/api/to-chuc", toChucRoutes);
-// app.use("/api/hoat-dong", hoatDongRoutes);
-// app.use("/api/phieu-dang-ky", phieuDangKyRoutes);
-// app.use("/api/dot-tuyen-clb", dotTuyenClbRoutes);
 
 // ─── 404 handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
