@@ -1,6 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 
-export default function DetailClubPage() {
+export default async function DetailClubPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   return (
     <div>
       <div className="relative h-[300px] mb-[35px]">
@@ -65,6 +71,14 @@ export default function DetailClubPage() {
         <div className="text-[16px] font-bold">Số điện thoại: </div>
       </div>
       <h1 className="mb-[30px] text-[24px] font-bold text-center text-[#1A73E8]">CÂU LẠC BỘ HIỆN KHÔNG MỞ ĐƠN TUYỂN THÀNH VIÊN!</h1>
+      <div className="flex justify-center mt-4">
+      <Link
+        href={`/club/${id}/member`}
+        className="mt-2 bg-[#08667a] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#06505f] transition"
+      >
+        Xem thành viên
+      </Link>
+      </div>
     </div>
   )
 }

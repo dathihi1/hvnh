@@ -10,11 +10,11 @@ export default function EventPage() {
   return (
     <>
       <div className="pb-[20px]">
-        <BannerCustom className="mb-[30px] p-[10px] ">
-          <Link href='/' className="">
-            Trang chủ
-          </Link>
-        </BannerCustom>
+        <div className="flex justify-between items-center mb-[20px]">
+          <BannerCustom className="mb-0 p-[10px]">
+            TẤT CẢ SỰ KIỆN
+          </BannerCustom>
+        </div>
         <EventCustome/>
       </div>
     </>

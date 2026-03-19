@@ -8,9 +8,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export function UserMenu({
-  className
+  className,
+  isOrganization = false
 }: {
   className?: string
+  isOrganization?: boolean
 }) {
   const router = useRouter()
 
@@ -35,26 +37,33 @@ export function UserMenu({
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[99999]">
-        <DropdownMenuGroup>
+       <DropdownMenuGroup>
+        {!isOrganization && (
+          <>
+            <DropdownMenuItem>
+              <User />
+              <Link href="/profile">Account</Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem>
+              <Rows2 />
+              <Link href="/my-events">Sự kiện của tôi</Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem>
+              <ClipboardClock />
+              <Link href="/history-club">Lịch sử CLB</Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {isOrganization && (
           <DropdownMenuItem>
             <User />
-            <Link href="/profile">
-              Account
-            </Link>
+            <Link href="/organization/profile">Hồ sơ</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Rows2 />
-            <Link href="/my-events">
-              Sự kiện của tôi
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <ClipboardClock />
-            <Link href="/history-club">
-              Lịch sử CLB
-            </Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        )}
+      </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOutIcon />

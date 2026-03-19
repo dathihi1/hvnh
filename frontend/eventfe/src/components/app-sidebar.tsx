@@ -45,6 +45,11 @@ const data = {
       url: "/admin/management-account",
       icon: IconUsers,
     },
+    {
+      title: "Registrations",
+      url: "/admin/event-registration/test",
+      icon: IconFileDescription,
+    },   
   ],
   navSecondary: [
     {
