@@ -62,7 +62,7 @@ export type AiSearchBody =
   paths["/api/ai/search"]["post"]["requestBody"]["content"]["application/json"];
 
 export type AiRecommendBody =
-  paths["/api/ai/recommend"]["post"]["requestBody"]["content"]["application/json"];
+  NonNullable<paths["/api/ai/recommend"]["post"]["requestBody"]>["content"]["application/json"];
 
 export type AiAskBody =
   paths["/api/ai/ask"]["post"]["requestBody"]["content"]["application/json"];
@@ -75,7 +75,7 @@ export type MeResponse =
   paths["/api/auth/me"]["get"]["responses"][200]["content"]["application/json"];
 
 export type NotificationListResponse =
-  paths["/api/thong-bao/"]["get"]["responses"][200]["content"]["application/json"];
+  paths["/api/thong-bao"]["get"]["responses"][200]["content"]["application/json"];
 
 export type NotificationStatsResponse =
   paths["/api/thong-bao/stats"]["get"]["responses"][200]["content"]["application/json"];

@@ -12,19 +12,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { IconCheck, IconX, IconEye } from "@tabler/icons-react"
-import type { PhanHoiForm, TrangThaiPhanHoi } from "@/types/form/form.types"
+import type { FormResponse, ResponseStatus } from "@/types/form/form.types"
 
-const STATUS_MAP: Record<TrangThaiPhanHoi, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  NHAP: { label: "Nhap", variant: "outline" },
-  DA_NOP: { label: "Da nop", variant: "secondary" },
-  DA_DUYET: { label: "Da duyet", variant: "default" },
-  TU_CHOI: { label: "Tu choi", variant: "destructive" },
+const STATUS_MAP: Record<ResponseStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  submitted: { label: "Da nop", variant: "secondary" },
+  approved: { label: "Da duyet", variant: "default" },
+  rejected: { label: "Tu choi", variant: "destructive" },
 }
 
 interface ResponseTableProps {
-  responses: PhanHoiForm[]
-  onApprove?: (responseId: string, status: "DA_DUYET" | "TU_CHOI") => void
-  onViewDetail?: (response: PhanHoiForm) => void
+  responses: FormResponse[]
+  onApprove?: (responseId: number, status: "approved" | "rejected") => void
+  onViewDetail?: (response: FormResponse) => void
 }
 
 export function ResponseTable({ responses, onApprove, onViewDetail }: ResponseTableProps) {
@@ -50,18 +49,18 @@ export function ResponseTable({ responses, onApprove, onViewDetail }: ResponseTa
       </TableHeader>
       <TableBody>
         {responses.map((response, index) => {
-          const status = STATUS_MAP[response.TrangThai] || STATUS_MAP.DA_NOP
+          const status = STATUS_MAP[response.status] ?? STATUS_MAP.submitted
           return (
-            <TableRow key={response.MaPhanHoi}>
+            <TableRow key={response.responseId}>
               <TableCell>{index + 1}</TableCell>
               <TableCell className="font-medium">
-                {response.nguoiDung?.TenNguoiDung || response.MaNguoiDung}
+                {response.user?.userName ?? response.userId ?? "-"}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {response.nguoiDung?.Email || "-"}
+                {response.user?.email ?? response.respondentEmail ?? "-"}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(response.ThoiGianNop).toLocaleString("vi-VN")}
+                {new Date(response.submittedAt).toLocaleString("vi-VN")}
               </TableCell>
               <TableCell>
                 <Badge variant={status.variant}>{status.label}</Badge>
@@ -77,13 +76,13 @@ export function ResponseTable({ responses, onApprove, onViewDetail }: ResponseTa
                       <IconEye className="size-4" />
                     </Button>
                   )}
-                  {onApprove && response.TrangThai === "DA_NOP" && (
+                  {onApprove && response.status === "submitted" && (
                     <>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-green-600 hover:text-green-700"
-                        onClick={() => onApprove(response.MaPhanHoi, "DA_DUYET")}
+                        onClick={() => onApprove(response.responseId, "approved")}
                       >
                         <IconCheck className="size-4" />
                       </Button>
@@ -91,7 +90,7 @@ export function ResponseTable({ responses, onApprove, onViewDetail }: ResponseTa
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => onApprove(response.MaPhanHoi, "TU_CHOI")}
+                        onClick={() => onApprove(response.responseId, "rejected")}
                       >
                         <IconX className="size-4" />
                       </Button>
