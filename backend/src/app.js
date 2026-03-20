@@ -22,6 +22,9 @@ const formsRoutes = require("./modules/forms/forms.route");
 
 const app = express();
 
+// ─── Trust Nginx reverse proxy ────────────────────────────────────────────────
+app.set("trust proxy", 1);
+
 // ─── Security ─────────────────────────────────────────────────────────────────
 app.use(helmet());
 
