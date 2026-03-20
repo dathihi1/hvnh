@@ -49,7 +49,7 @@ export default function MyEventsPage() {
             Sự kiện của tôi
           </Link>
         </BannerCustom>
-        <DialogCustom className="mb-[20px] ml-[30px]" />
+        <DialogCustom className="mb-[20px] ml-[30px]" onFilter={() => {}} />
         <div className="grid grid-cols-4 gap-y-8 px-4 mb-[30px]">
           {isLoading && Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="mx-auto w-[350px] h-[400px] bg-gray-100 rounded-[10px] animate-pulse" />
