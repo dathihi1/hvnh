@@ -14,13 +14,23 @@ export default function Home() {
   const [eventsPage, setEventsPage] = useState(1)
   const [clubsPage, setClubsPage] = useState(1)
 
+  // SỰ KIỆN SẮP DIỄN RA: chỉ hiển thị sự kiện trong vòng 1 tuần tới
+  const now = new Date()
+  const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
   const { data: activitiesData, isLoading: loadingActivities } = useQuery({
     queryKey: ["activities-home", eventsPage],
-    queryFn: () => getActivities({ page: eventsPage, limit: 8, status: "published" }),
+    queryFn: () => getActivities({
+      page: eventsPage,
+      limit: 8,
+      status: "published",
+      startDate: now.toISOString(),
+      endDate: oneWeekLater.toISOString(),
+    }),
   })
 
   const { data: orgsData, isLoading: loadingOrgs } = useQuery({
-    queryKey: ["organizations-clubs", clubsPage],
+    queryKey: ["organizations-clubs-recruiting", clubsPage],
     queryFn: () => getOrganizations({ page: clubsPage, limit: 8, type: "club" }),
   })
 

@@ -1,0 +1,4 @@
+userName,email,password,university,faculty,className,studentId,phoneNumber,role
+Nguyen Van A,nva@example.com,password123,Dai hoc Bach Khoa HN,Khoa CNTT,CNTT01,SV001,0901234567,student
+Tran Thi B,ttb@example.com,password123,Dai hoc Quoc Gia HN,Khoa Kinh te,KT02,SV002,0902345678,student
+Le Van C,lvc@example.com,password123,Dai hoc FPT,,,,,student

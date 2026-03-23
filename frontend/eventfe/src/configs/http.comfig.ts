@@ -6,8 +6,24 @@ function getAccessTokenFromCookie(): string | undefined {
   return match ? match[1] : undefined;
 }
 
+// Track whether a refresh is in-flight to avoid concurrent refresh storms
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = fetch("/api/auth/refresh", { method: "POST" })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
+
 async function fetchData<T>(
-  method: "GET" | "POST" | "PUT" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
   url: string,
   body?: any,
   token?: string,
@@ -29,23 +45,19 @@ async function fetchData<T>(
     }
   }
 
-  // Server-side: token passed manually as "Cookie: access_token=..." or "Bearer ..."
   if (isServer && token) {
     if (token.startsWith("Bearer ")) {
       headers["Authorization"] = token;
     } else if (token.startsWith("access_token=")) {
-      // Extract token value from cookie string
       const match = token.match(/access_token=([^;]+)/);
       if (match) {
         headers["Authorization"] = `Bearer ${match[1]}`;
       }
     } else {
-      // Treat as raw cookie header for compatibility
       headers["Cookie"] = token;
     }
   }
 
-  // Client-side: read access_token from cookie and add as Bearer
   if (!isServer) {
     const accessToken = getAccessTokenFromCookie();
     if (accessToken) {
@@ -59,7 +71,26 @@ async function fetchData<T>(
     options.next = nextOptions;
   }
 
-  const result = await fetch(url, options);
+  let result = await fetch(url, options);
+
+  // 401 on client-side: try to refresh once and retry the original request
+  if (
+    result.status === 401 &&
+    !isServer &&
+    !url.includes("/auth/refresh-token") &&
+    !url.includes("/auth/login")
+  ) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      const newToken = getAccessTokenFromCookie();
+      if (newToken) {
+        headers["Authorization"] = `Bearer ${newToken}`;
+        options.headers = headers;
+      }
+      result = await fetch(url, options);
+    }
+  }
+
   const data = await result.json();
   return data;
 }
@@ -76,4 +107,7 @@ export const http = {
 
   delete: <T>(url: string, body: any, token?: string) =>
     fetchData<T>("DELETE", url, body, token),
+
+  patch: <T>(url: string, body: any, token?: string) =>
+    fetchData<T>("PATCH", url, body, token),
 };

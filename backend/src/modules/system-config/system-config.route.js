@@ -9,6 +9,25 @@ const { updateConfigSchema, configKeyParam, orgIdParam, categoryParam } = requir
 const router = Router();
 
 router.use(protect);
+
+// ─── Org-leader self-service (before admin auth wall) ────────────────────────
+// These routes must be defined BEFORE router.use(authorize("admin"))
+router.get(
+  "/:key/my-org",
+  authorize("organization_leader"),
+  validateParams(configKeyParam),
+  controller.getMyOrgConfig
+);
+
+router.put(
+  "/:key/my-org",
+  authorize("organization_leader"),
+  validateParams(configKeyParam),
+  validate(updateConfigSchema),
+  controller.updateMyOrgConfig
+);
+
+// ─── Admin-only from here ─────────────────────────────────────────────────────
 router.use(authorize("admin"));
 
 // Get all global configs

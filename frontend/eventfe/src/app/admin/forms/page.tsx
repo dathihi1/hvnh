@@ -82,9 +82,21 @@ export default function FormsListPage() {
             <Card key={form.formId}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <CardTitle className="text-lg">{form.title}</CardTitle>
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                    {form.organization ? (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        {form.organization.organizationName}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        Admin
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(form.createdAt).toLocaleDateString("vi-VN")}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {form.status === "draft" && (

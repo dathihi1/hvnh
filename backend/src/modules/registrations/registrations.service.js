@@ -7,6 +7,7 @@ const {
   getRegistrationQueueEvents,
 } = require("../../config/bullmq");
 const { resolveFields } = require("../../utils/s3-helpers");
+const cache = require("../../utils/cache");
 
 // ─── Create registration (queue-based) ──────────────────────────────────────
 //
@@ -46,6 +47,7 @@ const createRegistration = async (data, userId) => {
     isLookingForTeam,
     teamMembers,
     maxParticipants: activity.maxParticipants,
+    organizationId: activity.organizationId,
   });
 
   // Wait for the worker to finish processing this job
@@ -64,28 +66,113 @@ const createRegistration = async (data, userId) => {
 const cancelRegistration = async (registrationId, userId) => {
   const registration = await prisma.registration.findFirst({
     where: { registrationId: Number(registrationId), userId, isDeleted: false },
+    include: {
+      activity: { select: { activityId: true, registrationDeadline: true, maxParticipants: true } },
+    },
   });
   if (!registration) throw new AppError("REGISTRATION_NOT_FOUND");
 
-  if (![REGISTRATION_STATUS.PENDING, REGISTRATION_STATUS.APPROVED].includes(registration.status)) {
+  const cancellableStatuses = [
+    REGISTRATION_STATUS.PENDING,
+    REGISTRATION_STATUS.APPROVED,
+    REGISTRATION_STATUS.WAITING,
+  ];
+  if (!cancellableStatuses.includes(registration.status)) {
     throw new AppError("REGISTRATION_CANNOT_CANCEL");
   }
 
-  return prisma.registration.update({
+  // Spec: ẩn nút hủy sau khi hết hạn đăng ký (enforce ở backend luôn)
+  if (
+    registration.activity.registrationDeadline &&
+    new Date() > registration.activity.registrationDeadline
+  ) {
+    throw new AppError("REGISTRATION_DEADLINE_PASSED");
+  }
+
+  await prisma.registration.update({
     where: { registrationId: Number(registrationId) },
     data: { status: REGISTRATION_STATUS.CANCELLED, updatedBy: userId, updatedAt: new Date() },
   });
+
+  // Invalidate activity detail cache so _count updates immediately
+  try {
+    await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${registration.activity.activityId}`);
+  } catch (_) {}
+
+  // Auto-promote người đầu tiên trong hàng chờ nếu hoạt động có giới hạn chỗ
+  if (
+    registration.activity.maxParticipants &&
+    [REGISTRATION_STATUS.PENDING, REGISTRATION_STATUS.APPROVED].includes(registration.status)
+  ) {
+    await promoteWaitlist(registration.activity.activityId);
+  }
+
+  return { success: true };
+};
+
+// ─── Promote waitlist ────────────────────────────────────────────────────────
+// Khi có chỗ trống, tự động chuyển người đầu tiên trong WAITING → PENDING
+
+const promoteWaitlist = async (activityId) => {
+  const next = await prisma.registration.findFirst({
+    where: { activityId, status: REGISTRATION_STATUS.WAITING, isDeleted: false },
+    orderBy: { registrationTime: "asc" },
+  });
+
+  if (!next) return null;
+
+  const updated = await prisma.registration.update({
+    where: { registrationId: next.registrationId },
+    data: { status: REGISTRATION_STATUS.PENDING, updatedAt: new Date() },
+    include: { activity: { select: { activityName: true } } },
+  });
+
+  // Thông báo cho người được promote
+  try {
+    const { sendNotification } = require("../notifications/notifications.service");
+    await sendNotification(
+      {
+        title: "Có chỗ trống cho bạn!",
+        content: `Đã có chỗ trống cho hoạt động "${updated.activity?.activityName}". Đăng ký của bạn đã được chuyển sang danh sách chờ duyệt.`,
+        userId: next.userId,
+        notificationType: "registration",
+        channels: ["IN_APP"],
+      },
+      next.userId
+    );
+  } catch (_) {}
+
+  return updated;
+};
+
+// ─── Get my registration for a specific activity ────────────────────────────
+
+const getMyRegistrationByActivity = async (userId, activityId) => {
+  const registration = await prisma.registration.findFirst({
+    where: { userId, activityId: Number(activityId), isDeleted: false },
+    include: {
+      registrationCheckins: {
+        include: { activityCheckin: true },
+        orderBy: { checkInTime: "desc" },
+      },
+    },
+  });
+  return registration; // null nếu chưa đăng ký
 };
 
 // ─── Get my registrations ───────────────────────────────────────────────────
 
-const getMyRegistrations = async (userId, { page = 1, limit = 20, status } = {}) => {
+const getMyRegistrations = async (userId, { page = 1, limit = 20, status, attended } = {}) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
   const where = {
     userId,
     isDeleted: false,
     ...(status && { status }),
+    // attended=true: chỉ lấy những registration đã có check-in
+    ...(attended === "true" && {
+      registrationCheckins: { some: { checkInTime: { not: null } } },
+    }),
   };
 
   const [data, total] = await Promise.all([
@@ -101,8 +188,13 @@ const getMyRegistrations = async (userId, { page = 1, limit = 20, status } = {})
             endTime: true,
             location: true,
             coverImage: true,
+            registrationDeadline: true,
             organization: { select: { organizationId: true, organizationName: true } },
           },
+        },
+        registrationCheckins: {
+          select: { checkInTime: true, checkOutTime: true },
+          orderBy: { checkInTime: "desc" },
         },
       },
       orderBy: { registrationTime: "desc" },
@@ -124,23 +216,56 @@ const getMyRegistrations = async (userId, { page = 1, limit = 20, status } = {})
 
 // ─── Get registrations by activity (admin/leader) ───────────────────────────
 
-const getRegistrationsByActivity = async (activityId, { page = 1, limit = 20, status } = {}) => {
+const getRegistrationsByActivity = async (activityId, { page = 1, limit = 20, status, search, checkinStatus, registrationType } = {}) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
+
   const where = {
     activityId: Number(activityId),
     isDeleted: false,
     ...(status && { status }),
+    ...(registrationType && { registrationType }),
+    ...(search && {
+      user: {
+        OR: [
+          { userName: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { studentId: { contains: search, mode: "insensitive" } },
+        ],
+      },
+    }),
+    ...(checkinStatus === "checkin" && {
+      registrationCheckins: { some: { checkInTime: { not: null }, checkOutTime: null } },
+    }),
+    ...(checkinStatus === "checkout" && {
+      registrationCheckins: { some: { checkOutTime: { not: null } } },
+    }),
   };
 
   const [data, total] = await Promise.all([
     prisma.registration.findMany({
       where,
       include: {
-        user: { select: { userId: true, userName: true, email: true, studentId: true, avatarUrl: true } },
+        user: {
+          select: {
+            userId: true,
+            userName: true,
+            email: true,
+            studentId: true,
+            avatarUrl: true,
+            phoneNumber: true,
+            university: true,
+            faculty: true,
+            className: true,
+          },
+        },
         teamMembers: {
           where: { isDeleted: false },
           include: { user: { select: { userId: true, userName: true } } },
+        },
+        registrationCheckins: {
+          orderBy: { checkInTime: "desc" },
+          take: 1,
         },
       },
       orderBy: { registrationTime: "desc" },
@@ -315,33 +440,109 @@ const getActivityParticipantStats = async (activityId) => {
   });
   if (!activity) throw new AppError("ACTIVITY_NOT_FOUND");
 
-  const [pending, approved, rejected, cancelled, checkedIn] = await Promise.all([
-    prisma.registration.count({ where: { activityId: Number(activityId), isDeleted: false, status: REGISTRATION_STATUS.PENDING } }),
-    prisma.registration.count({ where: { activityId: Number(activityId), isDeleted: false, status: REGISTRATION_STATUS.APPROVED } }),
-    prisma.registration.count({ where: { activityId: Number(activityId), isDeleted: false, status: REGISTRATION_STATUS.REJECTED } }),
-    prisma.registration.count({ where: { activityId: Number(activityId), isDeleted: false, status: REGISTRATION_STATUS.CANCELLED } }),
-    prisma.registrationCheckin.count({
+  const aid = Number(activityId);
+  const [pending, approved, rejected, cancelled, waiting, checkedIn, checkedOut] = await Promise.all([
+    prisma.registration.count({ where: { activityId: aid, isDeleted: false, status: REGISTRATION_STATUS.PENDING } }),
+    prisma.registration.count({ where: { activityId: aid, isDeleted: false, status: REGISTRATION_STATUS.APPROVED } }),
+    prisma.registration.count({ where: { activityId: aid, isDeleted: false, status: REGISTRATION_STATUS.REJECTED } }),
+    prisma.registration.count({ where: { activityId: aid, isDeleted: false, status: REGISTRATION_STATUS.CANCELLED } }),
+    prisma.registration.count({ where: { activityId: aid, isDeleted: false, status: REGISTRATION_STATUS.WAITING } }),
+    prisma.registration.count({
       where: {
-        registration: { activityId: Number(activityId), isDeleted: false },
-        checkInTime: { not: null },
+        activityId: aid,
+        isDeleted: false,
+        registrationCheckins: { some: { checkInTime: { not: null }, checkOutTime: null } },
+      },
+    }),
+    prisma.registration.count({
+      where: {
+        activityId: aid,
+        isDeleted: false,
+        registrationCheckins: { some: { checkOutTime: { not: null } } },
       },
     }),
   ]);
 
   return {
-    total: pending + approved + rejected + cancelled,
+    total: pending + approved + rejected + cancelled + waiting,
     pending,
     approved,
     rejected,
     cancelled,
+    waiting,
     checkedIn,
+    checkedOut,
     maxParticipants: activity.maxParticipants,
   };
+};
+
+// ─── Match team (org-side) ───────────────────────────────────────────────────
+
+const matchTeam = async ({ activityId, teamName, leaderRegistrationId, memberRegistrationIds }, userId, roles) => {
+  // Verify activity
+  const activity = await prisma.activity.findFirst({
+    where: { activityId: Number(activityId), isDeleted: false },
+  });
+  if (!activity) throw new AppError("ACTIVITY_NOT_FOUND");
+
+  // Permission check
+  const hasPermission = await isAdminOrOrgLeader(roles, activity.organizationId, userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  // Verify leader registration
+  const leaderReg = await prisma.registration.findFirst({
+    where: { registrationId: Number(leaderRegistrationId), activityId: Number(activityId), isDeleted: false },
+  });
+  if (!leaderReg) throw new AppError("REGISTRATION_NOT_FOUND", "Không tìm thấy đăng ký của trưởng nhóm");
+
+  // Verify member registrations
+  const memberRegs = await prisma.registration.findMany({
+    where: {
+      registrationId: { in: memberRegistrationIds.map(Number) },
+      activityId: Number(activityId),
+      isDeleted: false,
+    },
+  });
+  if (memberRegs.length !== memberRegistrationIds.length) {
+    throw new AppError("REGISTRATION_NOT_FOUND", "Một số đăng ký không tồn tại");
+  }
+
+  // Update leader's registration to group type
+  await prisma.registration.update({
+    where: { registrationId: Number(leaderRegistrationId) },
+    data: {
+      registrationType: "group",
+      teamName: teamName.trim(),
+      updatedBy: userId,
+      updatedAt: new Date(),
+    },
+  });
+
+  // Create TeamMember entries
+  const teamMemberData = [
+    { registrationId: Number(leaderRegistrationId), userId: leaderReg.userId, role: "leader", createdBy: userId },
+    ...memberRegs.map((r) => ({
+      registrationId: Number(leaderRegistrationId),
+      userId: r.userId,
+      role: "member",
+      createdBy: userId,
+    })),
+  ];
+  await prisma.teamMember.createMany({ data: teamMemberData, skipDuplicates: true });
+
+  // Soft-delete the member registrations (they are now part of the leader's team)
+  await prisma.registration.updateMany({
+    where: { registrationId: { in: memberRegistrationIds.map(Number) } },
+    data: { isDeleted: true, deletedAt: new Date(), deletedBy: userId },
+  });
+
+  return { success: true, teamName: teamName.trim() };
 };
 
 module.exports = {
   createRegistration,
   cancelRegistration,
+  getMyRegistrationByActivity,
   getMyRegistrations,
   getRegistrationsByActivity,
   getRegistrationById,
@@ -350,4 +551,6 @@ module.exports = {
   checkin,
   checkout,
   getActivityParticipantStats,
+  promoteWaitlist,
+  matchTeam,
 };

@@ -7,6 +7,7 @@ import {
   IconBell,
 } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 
 import {
   Avatar,
@@ -40,19 +41,18 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem("refreshToken")
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      })
+      await fetch("/api/auth/logout", { method: "POST" })
     } catch {
       // ignore
     } finally {
-      localStorage.removeItem("refreshToken")
+      // Clear all cached data
+      queryClient.clear()
+      localStorage.clear()
+      sessionStorage.clear()
       router.push("/auth")
     }
   }

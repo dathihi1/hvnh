@@ -418,6 +418,7 @@ export function FormBuilder({ initialData, onSave, isSaving }: FormBuilderProps)
 
             <CardContent className="space-y-3">
               <DndContext
+                id={`form-section-dnd-${sIdx}`}
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={(e) => handleDragEnd(e, sIdx)}

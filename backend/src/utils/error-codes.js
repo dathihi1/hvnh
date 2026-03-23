@@ -10,7 +10,11 @@ module.exports = {
   AUTH_TOKEN_EXPIRED:     { statusCode: 401, message: "Token đã hết hạn" },
   AUTH_TOKEN_INVALID:     { statusCode: 401, message: "Token không hợp lệ" },
   AUTH_REFRESH_INVALID:   { statusCode: 401, message: "Refresh token không hợp lệ" },
-  AUTH_RESET_INVALID:     { statusCode: 400, message: "Link khôi phục không hợp lệ hoặc đã hết hạn" },
+  AUTH_RESET_INVALID:          { statusCode: 400, message: "Link khôi phục không hợp lệ hoặc đã hết hạn" },
+  AUTH_OTP_INVALID:            { statusCode: 400, message: "Mã OTP không đúng hoặc đã hết hạn" },
+  AUTH_OTP_ALREADY_VERIFIED:   { statusCode: 400, message: "Tài khoản đã được xác thực" },
+  AUTH_GOOGLE_NO_EMAIL:        { statusCode: 400, message: "Không lấy được email từ Google" },
+  AUTH_GOOGLE_CODE_INVALID:    { statusCode: 400, message: "Mã xác thực Google không hợp lệ hoặc đã hết hạn" },
 
   // ─── User ──────────────────────────────────────────────
   USER_NOT_FOUND:         { statusCode: 404, message: "Người dùng không tồn tại" },
@@ -32,7 +36,8 @@ module.exports = {
   // ─── Organization ─────────────────────────────────────
   ORGANIZATION_NOT_FOUND:     { statusCode: 404, message: "Tổ chức không tồn tại" },
   ORGANIZATION_MEMBER_EXISTS: { statusCode: 409, message: "Thành viên đã tồn tại trong tổ chức" },
-  ORGANIZATION_NOT_MEMBER:    { statusCode: 403, message: "Bạn không phải thành viên của tổ chức này" },
+  ORGANIZATION_NOT_MEMBER:      { statusCode: 403, message: "Bạn không phải thành viên của tổ chức này" },
+  ORGANIZATION_NOT_RECRUITING:  { statusCode: 400, message: "Tổ chức hiện không mở đơn tuyển thành viên" },
 
   // ─── Club Application ────────────────────────────────
   APPLICATION_NOT_FOUND:       { statusCode: 404, message: "Đơn ứng tuyển không tồn tại" },
@@ -50,6 +55,12 @@ module.exports = {
 
   // ─── AI ───────────────────────────────────────────────
   AI_SERVICE_UNAVAILABLE:      { statusCode: 503, message: "Dịch vụ AI tạm thời không khả dụng" },
+
+  // ─── Form ─────────────────────────────────────────────
+  FORM_NOT_FOUND:            { statusCode: 404, message: "Biểu mẫu không tồn tại" },
+  FORM_CLOSED:               { statusCode: 400, message: "Biểu mẫu chưa mở hoặc đã đóng" },
+  FORM_ALREADY_SUBMITTED:    { statusCode: 409, message: "Bạn đã nộp biểu mẫu này rồi" },
+  FORM_RESPONSE_NOT_FOUND:   { statusCode: 404, message: "Phản hồi không tồn tại" },
 
   // ─── Common ────────────────────────────────────────────
   FORBIDDEN:              { statusCode: 403, message: "Bạn không có quyền thực hiện thao tác này" },

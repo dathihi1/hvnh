@@ -26,7 +26,7 @@ async function main() {
   console.log("Seeding database...");
 
   // ── 1. Roles ────────────────────────────────────────────────────────────────
-  const roleCodes = ["admin", "student", "organization_leader", "organization_member"];
+  const roleCodes = ["admin", "student", "organization_leader", "organization_member", "club"];
   const roles = {};
 
   for (const code of roleCodes) {
@@ -100,7 +100,18 @@ async function main() {
     create: { userId: users["organization_member"].userId, organizationId: org.organizationId, role: "member" },
   });
 
-  // ── 4. Activity ──────────────────────────────────────────────────────────────
+  // ── 4. Activity Categories ───────────────────────────────────────────────────
+  const categoryNames = ["Học thuật", "Phi học thuật"]
+  for (const categoryName of categoryNames) {
+    const cat = await prisma.activityCategory.upsert({
+      where: { categoryName },
+      update: {},
+      create: { categoryName },
+    })
+    console.log(`  Category: ${cat.categoryName} (id=${cat.categoryId})`)
+  }
+
+  // ── 5. Activity ──────────────────────────────────────────────────────────────
   const existingActivity = await prisma.activity.findFirst({ where: { activityName: "Tech Hackathon 2026" } });
   let activity;
   if (!existingActivity) {
@@ -124,7 +135,7 @@ async function main() {
     console.log(`  Activity: already exists (id=${activity.activityId})`);
   }
 
-  // ── 5. Open Form ─────────────────────────────────────────────────────────────
+  // ── 6. Open Form ─────────────────────────────────────────────────────────────
   const existingForm = await prisma.form.findFirst({ where: { title: "Hackathon Registration Form" } });
   if (!existingForm) {
     const form = await prisma.form.create({
@@ -190,7 +201,7 @@ async function main() {
     console.log(`  Form: already exists (id=${existingForm.formId})`);
   }
 
-  // ── 6. Permissions ───────────────────────────────────────────────────────────
+  // ── 7. Permissions ───────────────────────────────────────────────────────────
   const permissions = [
     { code: "users:read",          name: "Read Users",         resource: "users",          action: "read" },
     { code: "users:write",         name: "Write Users",        resource: "users",          action: "write" },

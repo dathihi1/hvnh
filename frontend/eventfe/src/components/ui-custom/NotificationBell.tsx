@@ -42,10 +42,16 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount]   = useState(0)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading]       = useState(false)
+  const [mounted, setMounted]           = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  const hasToken = mounted && document.cookie.includes("access_token=")
 
   // ── fetch unread count ──────────────────────────────────────────────────────
   const fetchCount = useCallback(async () => {
+    if (!document.cookie.includes("access_token=")) return
     try {
       const res = await getUnreadCount() as any
       if (res?.success) setUnreadCount(res.data?.unreadCount ?? 0)
@@ -55,10 +61,11 @@ export function NotificationBell() {
   }, [])
 
   useEffect(() => {
+    if (!hasToken) return
     fetchCount()
     const id = setInterval(fetchCount, 60_000)
     return () => clearInterval(id)
-  }, [fetchCount])
+  }, [fetchCount, hasToken])
 
   // ── close on outside click ──────────────────────────────────────────────────
   useEffect(() => {
@@ -108,6 +115,8 @@ export function NotificationBell() {
     setNotifications((prev) => prev.filter((n) => n.notificationId !== id))
     if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1))
   }
+
+  if (!mounted || !hasToken) return null
 
   return (
     <div ref={ref} className="relative">

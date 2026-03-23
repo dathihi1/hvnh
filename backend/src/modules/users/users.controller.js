@@ -77,6 +77,17 @@ const getUserOrganizations = async (req, res, next) => {
   }
 };
 
+const lookupByEmail = async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ success: false, message: "email is required" });
+    const result = await usersService.lookupByEmail(email);
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -86,4 +97,5 @@ module.exports = {
   deleteUser,
   getUserActivities,
   getUserOrganizations,
+  lookupByEmail,
 };

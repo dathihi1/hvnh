@@ -82,4 +82,28 @@ const sendNotificationEmail = async ({ to, subject, body }) => {
   });
 };
 
-module.exports = { sendPasswordResetEmail, sendWelcomeEmail, sendNotificationEmail };
+const sendOtpEmail = async ({ to, name, otp }) => {
+  const transporter = createTransporter();
+
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to,
+    subject: "Mã xác thực OTP - Student Activity Portal",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Xác thực tài khoản</h2>
+        <p>Xin chào <strong>${name}</strong>,</p>
+        <p>Mã OTP của bạn là:</p>
+        <div style="margin: 24px 0; text-align: center;">
+          <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #056382;">${otp}</span>
+        </div>
+        <p>Mã có hiệu lực trong <strong>10 phút</strong>.</p>
+        <p>Nếu bạn không đăng ký, hãy bỏ qua email này.</p>
+        <hr/>
+        <small style="color:#999;">Student Activity Portal</small>
+      </div>
+    `,
+  });
+};
+
+module.exports = { sendPasswordResetEmail, sendWelcomeEmail, sendNotificationEmail, sendOtpEmail };

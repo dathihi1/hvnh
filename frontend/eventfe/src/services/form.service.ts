@@ -16,17 +16,20 @@ export async function getFormList({
   limit = 20,
   status,
   organizationId,
+  search,
   token,
 }: {
   page?: number
   limit?: number
   status?: string
   organizationId?: number
+  search?: string
   token?: string
 } = {}) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (status) params.set("status", status)
   if (organizationId) params.set("organizationId", String(organizationId))
+  if (search) params.set("search", search)
   return http.get<ApiResponse<PaginatedData<Form>>>(`${BASE}?${params}`, token)
 }
 
@@ -63,16 +66,22 @@ export async function getFormResponses({
   page = 1,
   limit = 20,
   status,
+  userId,
+  search,
   token,
 }: {
   id: string | number
   page?: number
   limit?: number
   status?: string
+  userId?: number
+  search?: string
   token?: string
 }) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) })
   if (status) params.set("status", status)
+  if (userId) params.set("userId", String(userId))
+  if (search) params.set("search", search)
   return http.get<ApiResponse<PaginatedData<FormResponse>>>(`${BASE}/${id}/responses?${params}`, token)
 }
 
@@ -94,5 +103,17 @@ export async function exportGoogleSheets(id: string | number, token?: string) {
     `${BASE}/${id}/export/google-sheets`,
     {},
     token
+  )
+}
+
+export async function getMyFormResponse(id: string | number, token?: string) {
+  return http.get<ApiResponse<FormResponse | null>>(`${BASE}/${id}/my-response`, token)
+}
+
+export async function acceptFormRespondents(orgId: number | string, userIds: number[]) {
+  const APPS_BASE = `${envConfig.NEXT_PUBLIC_API_URL}/club-applications`
+  return http.post<ApiResponse<{ userId: number; status: string; applicationId: number }[]>>(
+    `${APPS_BASE}/org/${orgId}/accept`,
+    { userIds }
   )
 }

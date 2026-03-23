@@ -75,6 +75,25 @@ const deleteOrgOverride = async (req, res, next) => {
   }
 };
 
+const getMyOrgConfig = async (req, res, next) => {
+  try {
+    const data = await configService.getMyOrgConfig(req.params.key, req.user.userId);
+    return success(res, data);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateMyOrgConfig = async (req, res, next) => {
+  try {
+    const { value } = req.body;
+    const data = await configService.updateMyOrgConfig(req.params.key, value, req.user.userId);
+    return success(res, data);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllConfigs,
   getConfigsByCategory,
@@ -83,4 +102,6 @@ module.exports = {
   updateConfig,
   getOrgOverrides,
   deleteOrgOverride,
+  getMyOrgConfig,
+  updateMyOrgConfig,
 };

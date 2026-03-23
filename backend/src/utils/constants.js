@@ -38,6 +38,7 @@ const REGISTRATION_STATUS = {
   APPROVED: "approved",
   REJECTED: "rejected",
   CANCELLED: "cancelled",
+  WAITING: "waiting",
 };
 
 const REGISTRATION_TYPE = {
@@ -87,9 +88,14 @@ const REDIS_PREFIX = {
   BLACKLIST: "blacklist:",
   REFRESH: "refresh:",
   RESET_PASSWORD: "reset_pwd:",
+  USER_SESSION: "user:session:",
+  GOOGLE_OAUTH_CODE: "google_code:",
+  OTP: "otp:",
 };
 
 const RESET_PASSWORD_TTL = 15 * 60;
+const GOOGLE_OAUTH_CODE_TTL = 5 * 60;
+const OTP_TTL = 10 * 60;
 
 const NOTIFICATION_QUEUE_NAME = "notification-queue";
 const REGISTRATION_QUEUE_NAME = "registration-queue";
@@ -157,6 +163,8 @@ const CONFIG_DEFAULTS = {
 module.exports = {
   USER_STATUS,
   ROLE_CODE,
+  GOOGLE_OAUTH_CODE_TTL,
+  OTP_TTL,
   FORM_STATUS,
   RESPONSE_STATUS,
   QUESTION_TYPE,

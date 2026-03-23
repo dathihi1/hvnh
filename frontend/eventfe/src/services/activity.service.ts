@@ -25,6 +25,14 @@ export interface Activity {
   organization?: { organizationId: number; organizationName: string; logoUrl: string | null };
   category?: { categoryId: number; categoryName: string };
   _count?: { registrations: number };
+  activeCheckinSession?: {
+    checkinId: number;
+    checkInTime: string | null;
+    checkInCloseTime: string | null;
+    checkOutTime: string | null;
+    checkOutCloseTime: string | null;
+  } | null;
+  hasCompletedCheckinSession?: boolean;
 }
 
 export interface ActivityCategory {
@@ -60,6 +68,7 @@ export async function getActivities({
   organizationId,
   startDate,
   endDate,
+  search,
   token,
 }: {
   page?: number;
@@ -70,6 +79,7 @@ export async function getActivities({
   organizationId?: number;
   startDate?: string;
   endDate?: string;
+  search?: string;
   token?: string;
 } = {}) {
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -79,6 +89,7 @@ export async function getActivities({
   if (organizationId) params.set("organizationId", String(organizationId));
   if (startDate) params.set("startDate", startDate);
   if (endDate) params.set("endDate", endDate);
+  if (search) params.set("search", search);
   return http.get<ActivitiesResponse>(`${BASE}?${params}`, token);
 }
 
@@ -95,7 +106,7 @@ export interface CreateActivityPayload {
   description?: string | null;
   coverImage?: string | null;
   location?: string | null;
-  activityType: "program" | "competition" | "recruitment";
+  activityType: "program" | "competition";
   teamMode?: "individual" | "team" | "both";
   startTime?: string | null;
   endTime?: string | null;
@@ -106,6 +117,7 @@ export interface CreateActivityPayload {
   organizationId: number;
   categoryId: number;
   registrationFormId?: number | null;
+  teamRule?: { minTeamMembers?: number | null; maxTeamMembers?: number | null } | null;
 }
 
 export async function createActivity(data: CreateActivityPayload) {
@@ -118,6 +130,72 @@ export async function updateActivity(id: number | string, data: Partial<CreateAc
 
 export async function updateActivityStatus(id: number | string, activityStatus: string) {
   return http.put<ActivityResponse>(`${BASE}/${id}/status`, { activityStatus });
+}
+
+export interface CheckinSession {
+  checkinId: number;
+  activityId: number;
+  checkInTime: string | null;
+  checkInCloseTime: string | null;
+  checkOutTime: string | null;
+  checkOutCloseTime: string | null;
+}
+
+export async function openCheckinSession(
+  activityId: number | string,
+  params?: { checkInTime?: string | null; durationMinutes?: number | null }
+) {
+  return http.post<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/open`,
+    params ?? {}
+  );
+}
+
+export async function closeCheckinSession(activityId: number | string, checkinId: number) {
+  return http.patch<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/${checkinId}/close-checkin`,
+    {}
+  );
+}
+
+export async function openCheckoutSession(
+  activityId: number | string,
+  checkinId: number,
+  params?: { durationMinutes?: number | null }
+) {
+  return http.patch<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/${checkinId}/open-checkout`,
+    params ?? {}
+  );
+}
+
+export async function closeCheckoutSession(activityId: number | string, checkinId: number) {
+  return http.patch<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/${checkinId}/close-checkout`,
+    {}
+  );
+}
+
+export async function extendCheckinSession(
+  activityId: number | string,
+  checkinId: number,
+  minutes: number
+) {
+  return http.patch<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/${checkinId}/extend-checkin`,
+    { minutes }
+  );
+}
+
+export async function extendCheckoutSession(
+  activityId: number | string,
+  checkinId: number,
+  minutes: number
+) {
+  return http.patch<{ success: boolean; data: CheckinSession }>(
+    `${BASE}/${activityId}/checkin-sessions/${checkinId}/extend-checkout`,
+    { minutes }
+  );
 }
 
 export async function getMyOrgActivities({

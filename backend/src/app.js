@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
+const passport = require("./config/passport");
 const errorMiddleware = require("./middlewares/error.middleware");
 const authRoutes = require("./modules/auth/auth.route");
 const usersRoutes = require("./modules/users/users.route");
@@ -55,10 +56,17 @@ app.use(
   "/api",
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: process.env.NODE_ENV === "production" ? 500 : 2000,
     message: { success: false, error: "Quá nhiều yêu cầu, thử lại sau" },
+    skip: () => process.env.NODE_ENV === "development",
   }),
 );
+
+// ─── Disable ETags for API responses (prevent stale 304 on dynamic data) ─────
+app.set("etag", false);
+
+// ─── Passport (OAuth) ─────────────────────────────────────────────────────────
+app.use(passport.initialize());
 
 // ─── Body parser ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "10mb" }));

@@ -35,4 +35,18 @@ router.put(
   controller.updateApplication
 );
 
+// ─── Org-based applications ──────────────────────────────────────────────────
+router.post("/org/:orgId", controller.createOrgApplication);
+router.get("/org/:orgId/my", controller.getMyOrgApplication);
+router.get(
+  "/org/:orgId",
+  authorize("admin", "organization_leader"),
+  controller.getApplicationsByOrg
+);
+router.post(
+  "/org/:orgId/accept",
+  authorize("admin", "organization_leader"),
+  controller.acceptFormRespondents
+);
+
 module.exports = router;

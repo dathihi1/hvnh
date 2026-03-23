@@ -124,7 +124,6 @@ const updateConfig = async (key, value, updatedBy, organizationId) => {
       const globalConfig = await tx.systemConfig.findFirst({
         where: { key, organizationId: null, isDeleted: false },
       });
-      if (!globalConfig) throw new AppError("NOT_FOUND", `Global config '${key}' not found`);
 
       const org = await tx.organization.findFirst({
         where: { organizationId: orgId, isDeleted: false },
@@ -135,10 +134,10 @@ const updateConfig = async (key, value, updatedBy, organizationId) => {
         data: {
           key,
           value,
-          dataType: globalConfig.dataType,
-          category: globalConfig.category,
-          label: globalConfig.label,
-          description: globalConfig.description,
+          dataType: globalConfig?.dataType ?? "json",
+          category: globalConfig?.category ?? key.split(".")[0],
+          label: globalConfig?.label ?? key,
+          description: globalConfig?.description ?? null,
           organizationId: orgId,
           createdBy: updatedBy,
         },
@@ -213,6 +212,26 @@ const deleteOrgOverride = async (key, organizationId, deletedBy) => {
   return { message: "Override removed" };
 };
 
+// ─── Org-leader self-service (auto-resolves their own org) ──────────────────
+
+const ORG_LEADER_ROLES = ["president", "vice_president", "head_of_department", "vice_head", "leader"];
+
+const getMyOrgConfig = async (key, userId) => {
+  const member = await prisma.organizationMember.findFirst({
+    where: { userId, role: { in: ORG_LEADER_ROLES }, isDeleted: false },
+  });
+  if (!member) throw new AppError("FORBIDDEN", "Bạn không phải thành viên lãnh đạo của tổ chức nào");
+  return getConfigByKey(key, member.organizationId);
+};
+
+const updateMyOrgConfig = async (key, value, userId) => {
+  const member = await prisma.organizationMember.findFirst({
+    where: { userId, role: { in: ORG_LEADER_ROLES }, isDeleted: false },
+  });
+  if (!member) throw new AppError("FORBIDDEN", "Bạn không phải thành viên lãnh đạo của tổ chức nào");
+  return updateConfig(key, value, userId, member.organizationId);
+};
+
 module.exports = {
   getConfig,
   getAllConfigs,
@@ -222,4 +241,6 @@ module.exports = {
   updateConfig,
   getOrgOverrides,
   deleteOrgOverride,
+  getMyOrgConfig,
+  updateMyOrgConfig,
 };

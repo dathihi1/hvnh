@@ -46,13 +46,13 @@ const createOrganization = async (data, createdBy) => {
 
 // ─── Get organizations (paginated) ──────────────────────────────────────────
 
-const getOrganizations = async ({ page = 1, limit = 20, search, organizationType }) => {
+const getOrganizations = async ({ page = 1, limit = 20, search, organizationType, isRecruiting } = {}) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
 
   // ── Redis cache check ──
   const cacheKey = cache.buildListKey(cache.REDIS_PREFIX.ORGS_LIST, {
-    page: pageNum, limit: limitNum, search, organizationType,
+    page: pageNum, limit: limitNum, search, organizationType, isRecruiting,
   });
   const cached = await cache.get(cacheKey);
   if (cached) return cached;
@@ -60,6 +60,7 @@ const getOrganizations = async ({ page = 1, limit = 20, search, organizationType
   const where = {
     isDeleted: false,
     ...(organizationType && { organizationType }),
+    ...(isRecruiting === "true" && { isRecruiting: true }),
     ...(search && {
       organizationName: { contains: search, mode: "insensitive" },
     }),
@@ -83,7 +84,7 @@ const getOrganizations = async ({ page = 1, limit = 20, search, organizationType
     prisma.organization.count({ where }),
   ]);
 
-  await resolveArrayFields(data, ["logoUrl", "coverImageUrl"]);
+  await resolveArrayFields(data, ["logoUrl", "coverImageUrl", "leftImageUrl", "rightImageUrl", "middleImageUrl"]);
 
   const result = {
     data,
@@ -120,7 +121,7 @@ const getOrganizationById = async (organizationId) => {
 
   if (!org) throw new AppError("ORGANIZATION_NOT_FOUND");
 
-  await resolveFields(org, ["logoUrl", "coverImageUrl"]);
+  await resolveFields(org, ["logoUrl", "coverImageUrl", "leftImageUrl", "rightImageUrl", "middleImageUrl"]);
   // Resolve member avatars
   if (org.organizationMembers) {
     for (const m of org.organizationMembers) {
@@ -174,10 +175,22 @@ const softDeleteOrganization = async (organizationId, deletedBy) => {
 
 // ─── Get members ────────────────────────────────────────────────────────────
 
-const getMembers = async (organizationId, { page = 1, limit = 20 }) => {
+const getMembers = async (organizationId, { page = 1, limit = 20, search } = {}) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
-  const where = { organizationId: Number(organizationId), isDeleted: false };
+  const where = {
+    organizationId: Number(organizationId),
+    isDeleted: false,
+    ...(search && {
+      user: {
+        OR: [
+          { userName: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { studentId: { contains: search, mode: "insensitive" } },
+        ],
+      },
+    }),
+  };
 
   const [data, total] = await Promise.all([
     prisma.organizationMember.findMany({
@@ -328,6 +341,28 @@ const removeMember = async (organizationId, userId, removedBy, callerRoles) => {
   });
 };
 
+// ─── Toggle recruiting (open/close đơn tuyển thành viên) ────────────────────
+
+const toggleRecruiting = async (organizationId, isRecruiting, userId, callerRoles) => {
+  const org = await prisma.organization.findFirst({
+    where: { organizationId: Number(organizationId), isDeleted: false },
+  });
+  if (!org) throw new AppError("ORGANIZATION_NOT_FOUND");
+
+  const hasPermission = await isAdminOrOrgLeader(callerRoles, Number(organizationId), userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  // Invalidate caches
+  await cache.del(`${cache.REDIS_PREFIX.ORG_DETAIL}${organizationId}`);
+  await cache.invalidateByPrefix(cache.REDIS_PREFIX.ORGS_LIST);
+
+  return prisma.organization.update({
+    where: { organizationId: Number(organizationId) },
+    data: { isRecruiting, updatedBy: userId, updatedAt: new Date() },
+    select: { organizationId: true, organizationName: true, isRecruiting: true },
+  });
+};
+
 // ─── Get my organization (for org leader) ───────────────────────────────────
 
 const getMyOrganization = async (userId) => {
@@ -354,6 +389,9 @@ const getMyOrganization = async (userId) => {
               activities: { where: { isDeleted: false } },
             },
           },
+          recruitmentForm: {
+            select: { formId: true, title: true, status: true },
+          },
         },
       },
     },
@@ -362,8 +400,101 @@ const getMyOrganization = async (userId) => {
   if (!membership?.organization) throw new AppError("ORGANIZATION_NOT_FOUND");
 
   const org = membership.organization;
-  await resolveFields(org, ["logoUrl", "coverImageUrl"]);
+  await resolveFields(org, ["logoUrl", "coverImageUrl", "leftImageUrl", "rightImageUrl", "middleImageUrl"]);
   return { ...org, memberRole: membership.role };
+};
+
+// ─── Open recruitment ────────────────────────────────────────────────────────
+
+const openRecruitment = async (organizationId, data, userId, callerRoles) => {
+  const org = await prisma.organization.findFirst({
+    where: { organizationId: Number(organizationId), isDeleted: false },
+  });
+  if (!org) throw new AppError("ORGANIZATION_NOT_FOUND");
+
+  const hasPermission = await isAdminOrOrgLeader(callerRoles, Number(organizationId), userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  await cache.del(`${cache.REDIS_PREFIX.ORG_DETAIL}${organizationId}`);
+  await cache.invalidateByPrefix(cache.REDIS_PREFIX.ORGS_LIST);
+
+  return prisma.organization.update({
+    where: { organizationId: Number(organizationId) },
+    data: {
+      isRecruiting: true,
+      applyDeadline: data.applyDeadline ? new Date(data.applyDeadline) : null,
+      responseDeadline: data.responseDeadline ? new Date(data.responseDeadline) : null,
+      interviewSchedule: data.interviewSchedule ? new Date(data.interviewSchedule) : null,
+      recruitmentFormId: data.recruitmentFormId ? Number(data.recruitmentFormId) : null,
+      updatedBy: userId,
+      updatedAt: new Date(),
+    },
+    select: {
+      organizationId: true,
+      organizationName: true,
+      isRecruiting: true,
+      applyDeadline: true,
+      responseDeadline: true,
+      interviewSchedule: true,
+      recruitmentFormId: true,
+    },
+  });
+};
+
+// ─── Close recruitment ───────────────────────────────────────────────────────
+
+const closeRecruitment = async (organizationId, userId, callerRoles) => {
+  const org = await prisma.organization.findFirst({
+    where: { organizationId: Number(organizationId), isDeleted: false },
+  });
+  if (!org) throw new AppError("ORGANIZATION_NOT_FOUND");
+
+  const hasPermission = await isAdminOrOrgLeader(callerRoles, Number(organizationId), userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  await cache.del(`${cache.REDIS_PREFIX.ORG_DETAIL}${organizationId}`);
+  await cache.invalidateByPrefix(cache.REDIS_PREFIX.ORGS_LIST);
+
+  return prisma.organization.update({
+    where: { organizationId: Number(organizationId) },
+    data: { isRecruiting: false, updatedBy: userId, updatedAt: new Date() },
+    select: { organizationId: true, organizationName: true, isRecruiting: true },
+  });
+};
+
+// ─── Update recruitment settings ─────────────────────────────────────────────
+
+const updateRecruitmentSettings = async (organizationId, data, userId, callerRoles) => {
+  const org = await prisma.organization.findFirst({
+    where: { organizationId: Number(organizationId), isDeleted: false },
+  });
+  if (!org) throw new AppError("ORGANIZATION_NOT_FOUND");
+
+  const hasPermission = await isAdminOrOrgLeader(callerRoles, Number(organizationId), userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  await cache.del(`${cache.REDIS_PREFIX.ORG_DETAIL}${organizationId}`);
+  await cache.invalidateByPrefix(cache.REDIS_PREFIX.ORGS_LIST);
+
+  const updateData = { updatedBy: userId, updatedAt: new Date() };
+  if ("applyDeadline" in data) updateData.applyDeadline = data.applyDeadline ? new Date(data.applyDeadline) : null;
+  if ("responseDeadline" in data) updateData.responseDeadline = data.responseDeadline ? new Date(data.responseDeadline) : null;
+  if ("interviewSchedule" in data) updateData.interviewSchedule = data.interviewSchedule ? new Date(data.interviewSchedule) : null;
+  if ("recruitmentFormId" in data) updateData.recruitmentFormId = data.recruitmentFormId ? Number(data.recruitmentFormId) : null;
+
+  return prisma.organization.update({
+    where: { organizationId: Number(organizationId) },
+    data: updateData,
+    select: {
+      organizationId: true,
+      organizationName: true,
+      isRecruiting: true,
+      applyDeadline: true,
+      responseDeadline: true,
+      interviewSchedule: true,
+      recruitmentFormId: true,
+    },
+  });
 };
 
 // ─── Get org stats (for dashboard) ─────────────────────────────────────────
@@ -410,4 +541,8 @@ module.exports = {
   removeMember,
   getMyOrganization,
   getOrgStats,
+  toggleRecruiting,
+  openRecruitment,
+  closeRecruitment,
+  updateRecruitmentSettings,
 };

@@ -152,12 +152,15 @@ const getFormListSchema = z.object({
   status: z.enum(Object.values(FORM_STATUS)).optional(),
   activityId: z.coerce.number().int().positive().optional(),
   organizationId: z.coerce.number().int().positive().optional(),
+  search: z.string().optional(),
 });
 
 const getResponseListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: z.enum(Object.values(RESPONSE_STATUS)).optional(),
+  userId: z.coerce.number().int().positive().optional(),
+  search: z.string().optional(),
 });
 
 module.exports = {

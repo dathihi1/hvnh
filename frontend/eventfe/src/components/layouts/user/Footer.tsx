@@ -3,8 +3,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-[#05566B] py-8 w-full h-[200px]">
-      <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
+    <footer className="bg-[#05566B] py-8 w-full">
+      <div className="max-w-7xl mx-auto px-8 flex flex-wrap gap-8 items-start justify-between">
         <div className="flex flex-col items-center min-w-[160px]">
           <Image width={80} height={80} alt="Logo" src="/logoheader.png" className="mb-2" />
           <div className="text-white text-[15px] text-center">HỌC VIỆN NGÂN HÀNG</div>

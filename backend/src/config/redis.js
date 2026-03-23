@@ -5,6 +5,21 @@ const redis = new Redis({
   port: parseInt(process.env.REDIS_PORT) || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
   lazyConnect: true,
+  retryStrategy(times) {
+    if (times > 10) return null; // stop retrying after 10 attempts
+    return Math.min(times * 200, 5000); // exponential backoff, max 5s
+  },
+  maxRetriesPerRequest: 3,
+  connectTimeout: 10000,
+  enableReadyCheck: true,
+});
+
+redis.on("error", (err) => {
+  console.error("Redis error:", err.message);
+});
+
+redis.on("reconnecting", (delay) => {
+  console.warn(`Redis reconnecting in ${delay}ms`);
 });
 
 const connectRedis = async () => {
@@ -21,8 +36,5 @@ const disconnectRedis = async () => {
   await redis.quit();
   console.log("Redis disconnected");
 };
-
-process.on("SIGINT", disconnectRedis);
-process.on("SIGTERM", disconnectRedis);
 
 module.exports = { redis, connectRedis, disconnectRedis };

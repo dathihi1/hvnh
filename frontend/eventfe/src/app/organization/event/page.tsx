@@ -91,11 +91,18 @@ export default function OrgEventPage() {
     <div className="px-[60px] py-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold text-[#0E5C63]">QUẢN LÝ HOẠT ĐỘNG</h1>
-        <Link href="/organization/create-program">
-          <button className="bg-[#0E5C63] text-white px-4 py-2 rounded text-sm">
-            + Tạo mới
-          </button>
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link href="/organization/create-program">
+            <button className="w-full bg-[#0E5C63] text-white px-4 py-2 rounded text-sm">
+              + Tạo mới chương trình
+            </button>
+          </Link>
+          <Link href="/organization/create-contest">
+            <button className="w-full bg-[#0E5C63] text-white px-4 py-2 rounded text-sm">
+              + Tạo mới cuộc thi
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Status tabs */}

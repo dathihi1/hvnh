@@ -14,7 +14,9 @@ const createRegistrationSchema = z.object({
 const getRegistrationsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  status: z.enum(["pending", "approved", "rejected", "cancelled"]).optional(),
+  status: z.enum(["pending", "approved", "rejected", "cancelled", "waiting"]).optional(),
+  search: z.string().max(100).optional(),
+  checkinStatus: z.enum(["checkin", "checkout"]).optional(),
 });
 
 const getMyRegistrationsQuerySchema = z.object({

@@ -1,11 +1,12 @@
 "use client"
 
-import Image from "next/image";
+import { useState } from "react";
+import { SafeImage } from "@/components/ui-custom/SafeImage";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { getOrganizationMembers } from "@/services/organization.service";
+import { getOrganizationById, getOrganizationMembers } from "@/services/organization.service";
 
-const ROLE_MAP: Record<string, string> = {
+const ROLE_LABELS_CLUB: Record<string, string> = {
   president:          "Chủ nhiệm",
   vice_president:     "Phó chủ nhiệm",
   head_of_department: "Trưởng ban",
@@ -13,8 +14,29 @@ const ROLE_MAP: Record<string, string> = {
   member:             "Thành viên",
 };
 
+const ROLE_LABELS_ORG: Record<string, string> = {
+  president:          "Trưởng ban tổ chức",
+  vice_president:     "Phó ban tổ chức",
+  head_of_department: "Trưởng ban",
+  vice_head:          "Phó ban",
+  member:             "Thành viên",
+};
+
+function getRoleLabel(role: string, orgType: string | null | undefined): string {
+  const map = orgType === "club" ? ROLE_LABELS_CLUB : ROLE_LABELS_ORG;
+  return map[role] ?? role;
+}
+
 export default function ClubMemberPage() {
   const { id } = useParams<{ id: string }>();
+  const [search, setSearch] = useState("");
+
+  const { data: orgDetail } = useQuery({
+    queryKey: ["organization", id],
+    queryFn: () => getOrganizationById(id),
+    enabled: !!id,
+  });
+  const orgType = orgDetail?.data?.organizationType ?? null;
 
   const { data, isLoading } = useQuery({
     queryKey: ["org-members", id],
@@ -23,13 +45,26 @@ export default function ClubMemberPage() {
   });
 
   // Backend trả: { success: true, data: { data: [], meta: {} } }
-  const members = data?.data?.data ?? [];
+  const allMembers = data?.data?.data ?? [];
+
+  const members = search.trim()
+    ? allMembers.filter((m) => {
+        const q = search.toLowerCase()
+        return (
+          m.user.userName.toLowerCase().includes(q) ||
+          m.user.email.toLowerCase().includes(q) ||
+          getRoleLabel(m.role ?? "", orgType).toLowerCase().includes(q)
+        )
+      })
+    : allMembers;
 
   return (
     <div className="px-[40px] py-[30px]">
       <div className="mb-[20px]">
         <input
-          placeholder="Tìm kiếm theo tên, lớp, khoa, vai trò"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Tìm kiếm theo tên, email, vai trò"
           className="w-[300px] px-4 py-2 rounded-full bg-gray-100 outline-none"
         />
       </div>
@@ -70,7 +105,7 @@ export default function ClubMemberPage() {
             className="grid grid-cols-4 items-center py-3 border-t"
           >
             <div className="flex items-center gap-3">
-              <Image
+              <SafeImage
                 src={m.user.avatarUrl ?? "/hinh-nen-may-tinh-anime.jpg"}
                 alt={m.user.userName}
                 width={40}
@@ -86,7 +121,7 @@ export default function ClubMemberPage() {
                 : "—"}
             </div>
             <div className="font-semibold">
-              {ROLE_MAP[m.role ?? ""] ?? m.role ?? "—"}
+              {getRoleLabel(m.role ?? "", orgType) || "—"}
             </div>
           </div>
         ))}

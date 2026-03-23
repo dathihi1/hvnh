@@ -12,9 +12,16 @@ const createOrganizationSchema = z.object({
 
 const updateOrganizationSchema = z.object({
   organizationName: z.string().min(1).max(255).optional(),
+  email: z.string().email("Email không hợp lệ").optional().nullable(),
   description: z.string().optional().nullable(),
   logoUrl: z.string().optional().nullable(),
   coverImageUrl: z.string().optional().nullable(),
+  leftImageUrl: z.string().optional().nullable(),
+  rightImageUrl: z.string().optional().nullable(),
+  middleImageUrl: z.string().optional().nullable(),
+  tiktokUrl: z.string().optional().nullable(),
+  facebookUrl: z.string().optional().nullable(),
+  phoneNumber: z.string().optional().nullable(),
 });
 
 const getOrganizationsQuerySchema = z.object({

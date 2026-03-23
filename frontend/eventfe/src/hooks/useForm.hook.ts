@@ -7,15 +7,17 @@ export function useFormList({
   limit = 20,
   status,
   organizationId,
+  search,
 }: {
   page?: number
   limit?: number
   status?: string
   organizationId?: number
+  search?: string
 } = {}) {
   return useQuery({
-    queryKey: ["forms", { page, limit, status, organizationId }],
-    queryFn: () => formService.getFormList({ page, limit, status, organizationId }),
+    queryKey: ["forms", { page, limit, status, organizationId, search }],
+    queryFn: () => formService.getFormList({ page, limit, status, organizationId, search }),
     staleTime: 1000 * 60 * 2,
   })
 }
@@ -89,15 +91,19 @@ export function useFormResponses({
   page = 1,
   limit = 20,
   status,
+  userId,
+  search,
 }: {
   id: string | number
   page?: number
   limit?: number
   status?: string
+  userId?: number
+  search?: string
 }) {
   return useQuery({
-    queryKey: ["form-responses", id, { page, limit, status }],
-    queryFn: () => formService.getFormResponses({ id, page, limit, status }),
+    queryKey: ["form-responses", id, { page, limit, status, userId, search }],
+    queryFn: () => formService.getFormResponses({ id, page, limit, status, userId, search }),
     enabled: !!id,
   })
 }

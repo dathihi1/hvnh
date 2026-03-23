@@ -1,5 +1,14 @@
 // Middleware xử lý lỗi toàn cục của Express
 const errorMiddleware = (err, req, res, next) => {
+  // Prisma unique constraint violation
+  if (err.code === "P2002") {
+    return res.status(409).json({
+      success: false,
+      statusCode: 409,
+      code: "DUPLICATE_FIELD",
+      message: "Dữ liệu đã tồn tại trong hệ thống",
+    });
+  }
 
   // Nếu lỗi có statusCode thì dùng, không thì mặc định 500 (lỗi server)
   const statusCode = err.statusCode || 500;

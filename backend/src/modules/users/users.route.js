@@ -14,6 +14,9 @@ const router = Router();
 
 router.use(protect);
 
+// ─── Public lookup (all authenticated users) ────────────────────────────────
+router.get("/lookup", controller.lookupByEmail);
+
 // ─── Current user ───────────────────────────────────────────────────────────
 router.get("/me", controller.getMe);
 router.get("/me/activities", controller.getUserActivities);

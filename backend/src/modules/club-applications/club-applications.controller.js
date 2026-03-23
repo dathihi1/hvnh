@@ -59,6 +59,55 @@ const deleteApplication = async (req, res, next) => {
   }
 };
 
+const createOrgApplication = async (req, res, next) => {
+  try {
+    const result = await clubApplicationsService.createOrgApplication(
+      { organizationId: req.params.orgId, ...req.body },
+      req.user.userId
+    );
+    return success(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMyOrgApplication = async (req, res, next) => {
+  try {
+    const result = await clubApplicationsService.getMyOrgApplication(
+      req.params.orgId, req.user.userId
+    );
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getApplicationsByOrg = async (req, res, next) => {
+  try {
+    const result = await clubApplicationsService.getApplicationsByOrg(
+      req.params.orgId, req.query
+    );
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const acceptFormRespondents = async (req, res, next) => {
+  try {
+    const { userIds } = req.body;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ success: false, message: "userIds is required" });
+    }
+    const result = await clubApplicationsService.acceptFormRespondents(
+      req.params.orgId, userIds, req.user.userId
+    );
+    return success(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createApplication,
   getMyApplications,
@@ -66,4 +115,8 @@ module.exports = {
   getApplicationById,
   updateApplication,
   deleteApplication,
+  createOrgApplication,
+  getMyOrgApplication,
+  getApplicationsByOrg,
+  acceptFormRespondents,
 };

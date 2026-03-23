@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useSearchParams } from "next/navigation"
 import { DialogCustom, type FilterValues } from "@/components/ui-custom/dialog.custom"
 import { EventCard } from "@/components/ui-custom/EventCard"
 import { PaginationCustom } from "@/components/ui-custom/pagination.custom"
@@ -18,6 +19,13 @@ export function EventCustome({
   isFilter = true,
   activityType,
 }: EventCustomeProps) {
+  const searchParams = useSearchParams()
+  const urlSearch = searchParams.get("search") ?? undefined
+  const urlStatus = searchParams.get("status") ?? undefined
+  const urlStartDate = searchParams.get("startDate") ?? undefined
+  const urlEndDate = searchParams.get("endDate") ?? undefined
+  const urlCategoryId = searchParams.get("categoryId") ?? undefined
+
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<FilterValues>({})
 
@@ -27,15 +35,18 @@ export function EventCustome({
   }
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["activities", page, activityType, filters],
+    queryKey: ["activities", page, activityType, filters, urlSearch, urlStatus, urlStartDate, urlEndDate, urlCategoryId],
     queryFn: () => getActivities({
       page,
       limit: 8,
       type: activityType,
-      status: filters.status || "published",
-      categoryId: filters.categoryId ? Number(filters.categoryId) : undefined,
-      startDate: filters.startDate || undefined,
-      endDate: filters.endDate || undefined,
+      status: filters.status || urlStatus || "published",
+      categoryId: filters.categoryId
+        ? Number(filters.categoryId)
+        : urlCategoryId ? Number(urlCategoryId) : undefined,
+      startDate: filters.startDate || urlStartDate || undefined,
+      endDate: filters.endDate || urlEndDate || undefined,
+      search: urlSearch,
     }),
   })
 
@@ -44,7 +55,7 @@ export function EventCustome({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-y-8 px-4 mb-[30px]">
+      <div className="grid grid-cols-4 gap-y-8 mb-[30px]">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="mx-auto w-[350px] h-[400px] bg-gray-100 rounded-[10px] animate-pulse" />
         ))}
@@ -64,11 +75,11 @@ export function EventCustome({
     <>
       {isFilter && (
         <DialogCustom
-          className="mb-[20px] ml-[30px]"
+          className="mb-[20px]"
           onFilter={handleFilter}
         />
       )}
-      <div className="grid grid-cols-4 gap-y-8 px-4 mb-[30px]">
+      <div className="grid grid-cols-4 gap-y-8 mb-[30px]">
         {activities.map((activity) => (
           <Link key={activity.activityId} href={`/event/${activity.activityId}`}>
             <EventCard activity={activity} />

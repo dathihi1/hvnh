@@ -5,7 +5,7 @@ const createActivitySchema = z.object({
   description: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
   location: z.string().max(255).optional().nullable(),
-  activityType: z.enum(["program", "competition", "recruitment"]),
+  activityType: z.enum(["program", "competition"]),
   teamMode: z.enum(["individual", "team", "both"]).default("individual"),
   startTime: z.coerce.date().optional().nullable(),
   endTime: z.coerce.date().optional().nullable(),
@@ -27,7 +27,7 @@ const updateActivitySchema = z.object({
   description: z.string().optional().nullable(),
   coverImage: z.string().optional().nullable(),
   location: z.string().max(255).optional().nullable(),
-  activityType: z.enum(["program", "competition", "recruitment"]).optional(),
+  activityType: z.enum(["program", "competition"]).optional(),
   teamMode: z.enum(["individual", "team", "both"]).optional(),
   startTime: z.coerce.date().optional().nullable(),
   endTime: z.coerce.date().optional().nullable(),
@@ -54,7 +54,7 @@ const getActivitiesQuerySchema = z.object({
   categoryId: z.coerce.number().int().positive().optional(),
   organizationId: z.coerce.number().int().positive().optional(),
   activityStatus: z.enum(["draft", "pending_review", "published", "running", "finished", "cancelled"]).optional(),
-  activityType: z.enum(["program", "competition", "recruitment"]).optional(),
+  activityType: z.enum(["program", "competition"]).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
   sortBy: z.enum(["startTime", "createdAt", "activityName"]).default("createdAt"),
@@ -70,6 +70,12 @@ const createCheckinSessionSchema = z.object({
   checkOutTime: z.coerce.date().optional().nullable(),
 });
 
+// Body for POST /activities/:id/checkin-sessions/open (all fields optional)
+const openCheckinBodySchema = z.object({
+  checkInTime: z.coerce.date().optional().nullable(),
+  checkOutTime: z.coerce.date().optional().nullable(),
+});
+
 module.exports = {
   createActivitySchema,
   updateActivitySchema,
@@ -77,4 +83,5 @@ module.exports = {
   getActivitiesQuerySchema,
   createCategorySchema,
   createCheckinSessionSchema,
+  openCheckinBodySchema,
 };

@@ -2,7 +2,6 @@
 
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { BannerCustom } from "@/components/ui-custom/banner.custom"
 import { EventCustome } from "@/components/ui-custom/event.custom"
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,19 +17,30 @@ function EventContent() {
 
   return (
     <div className="pb-[20px]">
-      <div className="flex justify-between items-center mb-[20px]">
-        <BannerCustom className="mb-0 p-[10px]">
-          {title}
-        </BannerCustom>
+      <div className="px-[60px]">
+        <EventCustome activityType={type} />
       </div>
-      <EventCustome activityType={type} />
+    </div>
+  )
+}
+
+function EventSkeleton() {
+  return (
+    <div className="pb-[20px]">
+      <div className="px-[60px]">
+        <div className="grid grid-cols-4 gap-y-8 mb-[30px]">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="mx-auto w-[350px] h-[400px] bg-gray-100 rounded-[10px] animate-pulse" />
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function EventPage() {
   return (
-    <Suspense fallback={<div className="pb-[20px]" />}>
+    <Suspense fallback={<EventSkeleton />}>
       <EventContent />
     </Suspense>
   )

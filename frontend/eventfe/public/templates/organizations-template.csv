@@ -1,0 +1,5 @@
+organizationName,organizationType,email,password,description
+CLB Lap Trinh,club,clblt@example.com,password123,Cau lac bo lap trinh
+Khoa CNTT,department,khoacntt@example.com,password123,Khoa Cong nghe thong tin
+Cong ty ABC,company,abc@example.com,password123,Cong ty doi tac
+Dai hoc XYZ,university,xyz@example.com,password123,Truong dai hoc doi tac

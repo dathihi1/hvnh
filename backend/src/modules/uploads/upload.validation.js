@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const ALLOWED_FOLDERS = ["avatars", "covers", "logos", "documents"];
+const ALLOWED_FOLDERS = ["avatars", "covers", "logos", "documents", "gallery"];
 
 const presignUploadSchema = z.object({
   fileName: z.string().min(1, "fileName is required"),

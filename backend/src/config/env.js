@@ -1,5 +1,15 @@
 // Optional: Validate environment variables
-const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET", "JWT_EXPIRE"];
+const requiredEnvVars = [
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "JWT_EXPIRE",
+  "JWT_REFRESH_SECRET",
+  "JWT_REFRESH_EXPIRE",
+  "FRONTEND_URL",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "GOOGLE_CALLBACK_URL",
+];
 
 const validateEnv = () => {
   const missing = requiredEnvVars.filter((envVar) => !process.env[envVar]);

@@ -144,6 +144,15 @@ const exportGoogleSheets = async (req, res, next) => {
   }
 };
 
+const getMyResponse = async (req, res, next) => {
+  try {
+    const result = await formsService.getMyResponse(req.params.id, req.user.userId);
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createForm,
   getFormList,
@@ -158,4 +167,5 @@ module.exports = {
   approveResponse,
   exportExcel,
   exportGoogleSheets,
+  getMyResponse,
 };

@@ -50,6 +50,9 @@ router.use(protect);
  */
 router.get("/:id/public", controller.getFormPublic);
 
+// User: get their own response to a form
+router.get("/:id/my-response", controller.getMyResponse);
+
 /**
  * @swagger
  * /api/forms/{id}/submit:

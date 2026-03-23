@@ -9,6 +9,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldError,
@@ -19,20 +20,27 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { PasswordInput } from "@/components/ui-custom/password-input"
 import { http } from "@/configs/http.comfig"
+import { envConfig } from "@/configs/env.config"
 import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
   password: z.string().min(8, "Không đủ 8 kí tự"),
+  rememberMe: z.boolean().default(false),
 })
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSuccess?: () => void
+}
+
+export function LoginForm({ onSuccess }: LoginFormProps = {}) {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   })
 
@@ -44,17 +52,16 @@ export function LoginForm() {
       return
     }
 
-    if (res.refreshToken) {
-      localStorage.setItem("refreshToken", res.refreshToken)
-    }
-
+    toast.success("Đăng nhập thành công")
+    onSuccess?.()
     const role = res.user?.role ?? "student"
     if (role === "admin") {
       router.push("/admin")
+    } else if (role === "organization_leader") {
+      router.push("/organization")
     } else {
       router.push("/")
     }
-    toast.success("Đăng nhập thành công")
   }
 
   return (
@@ -107,19 +114,44 @@ export function LoginForm() {
               )}
             />
           </FieldGroup>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <Controller
+                name="rememberMe"
+                control={form.control}
+                render={({ field }) => (
+                  <Checkbox
+                    id="form-login-remember"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+              <label htmlFor="form-login-remember" className="text-sm cursor-pointer select-none">
+                Lưu mật khẩu
+              </label>
+            </div>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-[#05566B]"
+              onClick={() => onSuccess?.()}
+            >
+              Quên mật khẩu?
+            </Link>
+          </div>
         </form>
       </CardContent>
       <CardFooter>
         <Field orientation="horizontal" className="flex flex-col">
-          <Link href="/auth/forgot-password" className="text-[#05566B] text-right w-full">Forgot password</Link>
           <Button type="submit" form="form-login" className="w-[130px] h-[40px] bg-[#056382] hover:bg-[#056382] cursor-pointer">
             Login
           </Button>
           <Button
             type="button"
+            onClick={() => { window.location.href = `${envConfig.NEXT_PUBLIC_API_URL}/auth/google` }}
             className="w-[327px] h-[48px] bg-white border border-[#EFF0F6] text-black shadow-[inset_0px_-3px_6px_0px_#F4F5FA99] hover:bg-white cursor-pointer"
           >
-            Sign up with Google
+            Sign in with Google
           </Button>
         </Field>
       </CardFooter>

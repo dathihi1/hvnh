@@ -14,17 +14,21 @@ const {
 
 const router = Router();
 
-router.use(protect);
-
-// ─── Public (any authenticated user) ────────────────────────────────────────
+// ─── Public (không cần đăng nhập) ───────────────────────────────────────────
 router.get("/", validateQuery(getOrganizationsQuerySchema), controller.getOrganizations);
-router.get("/my", authorize("organization_leader", "admin"), controller.getMyOrganization);
+
+// ─── Cần đăng nhập ──────────────────────────────────────────────────────────
+router.get("/my", protect, authorize("organization_leader", "admin"), controller.getMyOrganization);
+
+// ─── Parameterized routes (must come after specific named routes) ────────────
 router.get("/:id/stats", controller.getOrgStats);
+router.get("/:id/members", controller.getMembers);
 router.get("/:id", controller.getOrganizationById);
 
 // ─── Admin / Organization Leader ────────────────────────────────────────────
 router.post(
   "/",
+  protect,
   authorize("admin", "organization_leader"),
   validate(createOrganizationSchema),
   controller.createOrganization
@@ -32,18 +36,46 @@ router.post(
 
 router.put(
   "/:id",
+  protect,
   authorize("admin", "organization_leader"),
   validate(updateOrganizationSchema),
   controller.updateOrganization
 );
 
-router.delete("/:id", authorize("admin"), controller.deleteOrganization);
+router.delete("/:id", protect, authorize("admin"), controller.deleteOrganization);
+
+router.patch(
+  "/:id/recruiting",
+  protect,
+  authorize("admin", "organization_leader"),
+  controller.toggleRecruiting
+);
+
+router.patch(
+  "/:id/recruitment/open",
+  protect,
+  authorize("admin", "organization_leader"),
+  controller.openRecruitment
+);
+
+router.patch(
+  "/:id/recruitment/close",
+  protect,
+  authorize("admin", "organization_leader"),
+  controller.closeRecruitment
+);
+
+router.put(
+  "/:id/recruitment",
+  protect,
+  authorize("admin", "organization_leader"),
+  controller.updateRecruitmentSettings
+);
 
 // ─── Members ────────────────────────────────────────────────────────────────
-router.get("/:id/members", controller.getMembers);
-
 router.post(
   "/:id/members",
+  protect,
   authorize("admin", "organization_leader"),
   validate(addMemberSchema),
   controller.addMember
@@ -51,6 +83,7 @@ router.post(
 
 router.put(
   "/:id/members/:userId",
+  protect,
   authorize("admin", "organization_leader"),
   validate(updateMemberRoleSchema),
   controller.updateMemberRole
@@ -58,8 +91,16 @@ router.put(
 
 router.delete(
   "/:id/members/:userId",
+  protect,
   authorize("admin", "organization_leader"),
   controller.removeMember
+);
+
+router.post(
+  "/:id/notify-candidates",
+  protect,
+  authorize("admin", "organization_leader"),
+  controller.notifyCandidates
 );
 
 module.exports = router;

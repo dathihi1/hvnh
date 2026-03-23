@@ -106,6 +106,58 @@ const getMyOrgActivities = async (req, res, next) => {
   }
 };
 
+const openCheckin = async (req, res, next) => {
+  try {
+    const result = await activitiesService.openCheckin(req.params.id, req.body, req.user.userId, req.user.roles);
+    return success(res, result, 201);
+  } catch (err) { next(err); }
+};
+
+const closeCheckin = async (req, res, next) => {
+  try {
+    const result = await activitiesService.closeCheckin(
+      req.params.id, req.params.checkinId, req.user.userId, req.user.roles
+    );
+    return success(res, result);
+  } catch (err) { next(err); }
+};
+
+const openCheckout = async (req, res, next) => {
+  try {
+    const result = await activitiesService.openCheckout(
+      req.params.id, req.params.checkinId, req.body, req.user.userId, req.user.roles
+    );
+    return success(res, result);
+  } catch (err) { next(err); }
+};
+
+const closeCheckout = async (req, res, next) => {
+  try {
+    const result = await activitiesService.closeCheckout(
+      req.params.id, req.params.checkinId, req.user.userId, req.user.roles
+    );
+    return success(res, result);
+  } catch (err) { next(err); }
+};
+
+const extendCheckin = async (req, res, next) => {
+  try {
+    const result = await activitiesService.extendCheckin(
+      req.params.id, req.params.checkinId, req.body.minutes, req.user.userId, req.user.roles
+    );
+    return success(res, result);
+  } catch (err) { next(err); }
+};
+
+const extendCheckout = async (req, res, next) => {
+  try {
+    const result = await activitiesService.extendCheckout(
+      req.params.id, req.params.checkinId, req.body.minutes, req.user.userId, req.user.roles
+    );
+    return success(res, result);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   createActivity,
   getActivities,
@@ -118,4 +170,10 @@ module.exports = {
   createCheckinSession,
   getMyOrgActivities,
   getCheckinSessions,
+  openCheckin,
+  closeCheckin,
+  openCheckout,
+  closeCheckout,
+  extendCheckin,
+  extendCheckout,
 };

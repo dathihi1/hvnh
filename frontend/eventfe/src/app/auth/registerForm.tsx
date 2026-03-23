@@ -1,7 +1,6 @@
 "use client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
-import { toast } from "sonner"
 import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -22,51 +21,48 @@ import { http } from "@/configs/http.comfig"
 import { envConfig } from "@/configs/env.config"
 import { toastError, toastSuccess } from "@/lib/toast"
 import { useUniversity } from "@/hooks/useUniversity.hook"
+import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
-  name: z.string(),
+  userName: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
+  studentId: z.string().optional(),
   email: z.string().email("Email không hợp lệ"),
-  phone: z.string().min(10, "Số điện thoại phải có 10 chữ số"),
-  password: z.string().min(8, "Không đủ 8 kí tự"),
-  university: z.string(),
+  phoneNumber: z.string().min(10, "Số điện thoại phải có 10 chữ số"),
+  password: z.string().min(6, "Không đủ 6 kí tự"),
+  university: z.string().min(1, "Vui lòng chọn trường"),
 })
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  onSuccess?: () => void
+}
 
+export function RegisterForm({ onSuccess }: RegisterFormProps = {}) {
+  const router = useRouter()
   const { data } = useUniversity({ size: -1 })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      userName: "",
+      studentId: "",
       email: "",
-      phone: "",
+      phoneNumber: "",
       password: "",
       university: "",
     },
   })
 
-
   async function onSubmit(datavalue: z.infer<typeof formSchema>) {
-    try {
-      const res: any = await http.post(`${envConfig.NEXT_PUBLIC_API_URL}/auth/register`, datavalue)
+    const res = await http.post(`/api/auth/register`, datavalue) as any
 
-      if (res.code !== 200) {
-        toastError(res.message)
-        return
-      }
-      toastSuccess(res.message)
-    } catch (error) {
-      const toastId = toast.error(`Lỗi`, {
-        duration: 1500,
-        action: {
-          label: "X",
-          onClick: () => {
-            toast.dismiss(toastId)
-          }
-        }
-      })
+    if (!res?.success) {
+      toastError(res?.message || "Đăng ký thất bại")
+      return
     }
+
+    toastSuccess("Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP.")
+    onSuccess?.()
+    router.push(`/auth/verify-code?userId=${res.userId}&email=${encodeURIComponent(res.email)}`)
   }
 
   return (
@@ -75,7 +71,7 @@ export function RegisterForm() {
         <form id="form-register" onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="gap-[11px]">
             <Controller
-              name="name"
+              name="userName"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
@@ -87,6 +83,28 @@ export function RegisterForm() {
                     id="form-register-name"
                     aria-invalid={fieldState.invalid}
                     placeholder="Ava Wright"
+                    autoComplete="on"
+                    className="h-[46px]"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="studentId"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-register-student-id">
+                    Mã sinh viên
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="form-register-student-id"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="VD: 2051234567"
                     autoComplete="on"
                     className="h-[46px]"
                   />
@@ -120,7 +138,7 @@ export function RegisterForm() {
               )}
             />
             <Controller
-              name="phone"
+              name="phoneNumber"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
@@ -191,8 +209,8 @@ export function RegisterForm() {
             Sign up
           </Button>
           <Button
-            type="submit"
-            form="form-register"
+            type="button"
+            onClick={() => { window.location.href = `${envConfig.NEXT_PUBLIC_API_URL}/auth/google` }}
             className="w-[327px] h-[48px] bg-white border border-[#EFF0F6] text-black shadow-[inset_0px_-3px_6px_0px_#F4F5FA99] hover:bg-white cursor-pointer"
           >
             Sign up with Google

@@ -143,7 +143,7 @@ const createForm = async (payload, createdBy) => {
 
 // ─── List forms ───────────────────────────────────────────────────────────────
 
-const getFormList = async ({ page = 1, limit = 20, status, activityId, organizationId }) => {
+const getFormList = async ({ page = 1, limit = 20, status, activityId, organizationId, search }) => {
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 20;
 
@@ -152,6 +152,7 @@ const getFormList = async ({ page = 1, limit = 20, status, activityId, organizat
     ...(status && { status }),
     ...(activityId && { activityId: Number(activityId) }),
     ...(organizationId && { organizationId: Number(organizationId) }),
+    ...(search && { title: { contains: search, mode: "insensitive" } }),
   };
 
   const [data, total] = await Promise.all([
@@ -162,6 +163,7 @@ const getFormList = async ({ page = 1, limit = 20, status, activityId, organizat
       take: limitNum,
       include: {
         _count: { select: { responses: { where: { isDeleted: false } } } },
+        organization: { select: { organizationId: true, organizationName: true } },
       },
     }),
     prisma.form.count({ where }),
@@ -202,6 +204,7 @@ const getFormPublic = async (formId) => {
       headerImageUrl: true,
       confirmationMessage: true,
       status: true,
+      activityId: true,
       collectEmail: true,
       showProgressBar: true,
       shuffleQuestions: true,
@@ -263,10 +266,14 @@ const getFormPublic = async (formId) => {
 
   if (!form) throw new AppError("FORM_NOT_FOUND");
 
-  const now = new Date();
-  if (form.status !== FORM_STATUS.OPEN) throw new AppError("FORM_CLOSED");
-  if (form.openAt && now < new Date(form.openAt)) throw new AppError("FORM_CLOSED");
-  if (form.closeAt && now > new Date(form.closeAt)) throw new AppError("FORM_CLOSED");
+  // Activity-linked forms bypass the form-level status check
+  // (the activity's own registration deadline controls access)
+  if (!form.activityId) {
+    const now = new Date();
+    if (form.status !== FORM_STATUS.OPEN) throw new AppError("FORM_CLOSED");
+    if (form.openAt && now < new Date(form.openAt)) throw new AppError("FORM_CLOSED");
+    if (form.closeAt && now > new Date(form.closeAt)) throw new AppError("FORM_CLOSED");
+  }
 
   return form;
 };
@@ -443,11 +450,14 @@ const submitForm = async (formId, payload, userId) => {
     where: { formId: Number(formId), isDeleted: false },
   });
   if (!form) throw new AppError("FORM_NOT_FOUND");
-  if (form.status !== FORM_STATUS.OPEN) throw new AppError("FORM_CLOSED");
 
-  const now = new Date();
-  if (form.openAt && now < new Date(form.openAt)) throw new AppError("FORM_CLOSED");
-  if (form.closeAt && now > new Date(form.closeAt)) throw new AppError("FORM_CLOSED");
+  // Activity-linked forms bypass form-level status/time checks
+  if (!form.activityId) {
+    if (form.status !== FORM_STATUS.OPEN) throw new AppError("FORM_CLOSED");
+    const now = new Date();
+    if (form.openAt && now < new Date(form.openAt)) throw new AppError("FORM_CLOSED");
+    if (form.closeAt && now > new Date(form.closeAt)) throw new AppError("FORM_CLOSED");
+  }
 
   if (form.responseLimit) {
     const count = await prisma.formResponse.count({
@@ -544,7 +554,7 @@ const submitForm = async (formId, payload, userId) => {
 
 // ─── Get responses ────────────────────────────────────────────────────────────
 
-const getResponses = async (formId, { page = 1, limit = 20, status }) => {
+const getResponses = async (formId, { page = 1, limit = 20, status, userId, search }) => {
   const form = await prisma.form.findFirst({
     where: { formId: Number(formId), isDeleted: false },
   });
@@ -555,6 +565,15 @@ const getResponses = async (formId, { page = 1, limit = 20, status }) => {
 
   const where = {
     formId: Number(formId),
+    ...(userId && { userId: Number(userId) }),
+    ...(search && {
+      user: {
+        OR: [
+          { userName: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ],
+      },
+    }),
     isDeleted: false,
     ...(status && { status }),
   };
@@ -645,6 +664,31 @@ const approveResponse = async (formId, responseId, status) => {
   });
 };
 
+// ─── Get current user's own response ─────────────────────────────────────────
+
+const getMyResponse = async (formId, userId) => {
+  const response = await prisma.formResponse.findFirst({
+    where: { formId: Number(formId), userId, isDeleted: false },
+    orderBy: { submittedAt: "desc" },
+    include: {
+      answers: {
+        where: { isDeleted: false },
+        include: {
+          question: { select: { questionId: true, title: true, type: true } },
+          answerOptions: {
+            where: { isDeleted: false },
+            include: {
+              option: { select: { optionId: true, label: true } },
+              row: { select: { rowId: true, label: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  return response ?? null;
+};
+
 module.exports = {
   createForm,
   getFormList,
@@ -657,4 +701,5 @@ module.exports = {
   getResponses,
   getResponseById,
   approveResponse,
+  getMyResponse,
 };

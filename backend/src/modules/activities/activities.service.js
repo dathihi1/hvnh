@@ -68,10 +68,12 @@ const getActivities = async ({
 }) => {
   const pageNum = Number(page);
   const limitNum = Number(limit);
+  const orgId = organizationId ? Number(organizationId) : undefined;
+  const catId = categoryId ? Number(categoryId) : undefined;
 
   // ── Redis cache check ──
   const cacheKey = cache.buildListKey(cache.REDIS_PREFIX.ACTIVITIES_LIST, {
-    page: pageNum, limit: limitNum, search, categoryId, organizationId,
+    page: pageNum, limit: limitNum, search, categoryId: catId, organizationId: orgId,
     activityStatus, activityType, startDate, endDate, sortBy, sortOrder,
   });
   const cached = await cache.get(cacheKey);
@@ -80,8 +82,8 @@ const getActivities = async ({
   const where = {
     isDeleted: false,
     ...(search && { activityName: { contains: search, mode: "insensitive" } }),
-    ...(categoryId && { categoryId }),
-    ...(organizationId && { organizationId }),
+    ...(catId && { categoryId: catId }),
+    ...(orgId && { organizationId: orgId }),
     ...(activityStatus && { activityStatus }),
     ...(activityType && { activityType }),
     ...(startDate && { startTime: { gte: startDate } }),
@@ -145,7 +147,12 @@ const getActivityById = async (activityId) => {
       },
       _count: {
         select: {
-          registrations: { where: { isDeleted: false } },
+          registrations: {
+            where: {
+              isDeleted: false,
+              status: { in: ["pending", "approved"] },
+            },
+          },
         },
       },
     },
@@ -156,9 +163,28 @@ const getActivityById = async (activityId) => {
   await resolveFields(activity, ["coverImage"]);
   await resolveNested(activity, "organization", ["logoUrl"]);
 
+  // Phiên checkin/checkout đang hoạt động — phục vụ button states (org + student)
+  const [activeCheckinSession, completedSessionCount] = await Promise.all([
+    prisma.activityCheckin.findFirst({
+      where: {
+        activityId: Number(activityId),
+        checkOutCloseTime: null, // phiên chưa hoàn toàn kết thúc
+      },
+      orderBy: { checkinId: "desc" },
+    }),
+    prisma.activityCheckin.count({
+      where: { activityId: Number(activityId), checkOutCloseTime: { not: null } },
+    }),
+  ]);
+  const result = {
+    ...activity,
+    activeCheckinSession: activeCheckinSession || null,
+    hasCompletedCheckinSession: completedSessionCount > 0,
+  };
+
   // ── Cache result (5 min TTL) ──
-  await cache.set(cacheKey, activity, 300);
-  return activity;
+  await cache.set(cacheKey, result, 300);
+  return result;
 };
 
 // ─── Update activity ────────────────────────────────────────────────────────
@@ -212,7 +238,7 @@ const updateActivity = async (activityId, data, userId, roles) => {
     });
   }
 
-  return prisma.activity.findUnique({
+  const result = await prisma.activity.findUnique({
     where: { activityId: Number(activityId) },
     include: {
       category: true,
@@ -220,6 +246,36 @@ const updateActivity = async (activityId, data, userId, roles) => {
       activityTeamRule: true,
     },
   });
+
+  // Notify all approved registrants that event details have changed
+  try {
+    const approvedRegistrations = await prisma.registration.findMany({
+      where: {
+        activityId: Number(activityId),
+        status: "approved",
+        isDeleted: false,
+      },
+      select: { userId: true },
+    });
+
+    if (approvedRegistrations.length > 0) {
+      const { sendBulkNotification } = require("../notifications/notifications.service");
+      await sendBulkNotification(
+        {
+          title: `Hoạt động "${updated.activityName}" đã được cập nhật`,
+          content: `Thông tin hoạt động bạn đã đăng ký vừa được thay đổi. Vui lòng kiểm tra lại chi tiết.`,
+          notificationType: "activity",
+          channels: ["IN_APP"],
+          userIds: approvedRegistrations.map((r) => r.userId),
+        },
+        userId
+      );
+    }
+  } catch (_) {
+    // Notification failure must not fail the update
+  }
+
+  return result;
 };
 
 // ─── Update activity status ─────────────────────────────────────────────────
@@ -258,20 +314,27 @@ const updateActivityStatus = async (activityId, newStatus, userId, roles) => {
   let finalStatus = newStatus;
 
   if (newStatus === ACTIVITY_STATUS.PENDING_REVIEW) {
-    const { getConfig } = require("../system-config/system-config.service");
-    const requireApproval = await getConfig(
-      CONFIG_KEYS.ACTIVITY_REQUIRE_APPROVAL,
-      activity.organizationId,
-    );
+    try {
+      const { getConfig } = require("../system-config/system-config.service");
+      const requireApproval = await getConfig(
+        CONFIG_KEYS.ACTIVITY_REQUIRE_APPROVAL,
+        activity.organizationId,
+      );
 
-    const approvalEnabled =
-      requireApproval !== null &&
-      typeof requireApproval === "object" &&
-      requireApproval.enabled === true;
+      // requireApproval can be a plain object { enabled: bool } from DB/cache
+      // or a string if somehow mis-serialized — guard both cases
+      let enabled = true; // safe default
+      if (requireApproval !== null && typeof requireApproval === "object") {
+        enabled = requireApproval.enabled === true;
+      } else if (requireApproval === "false" || requireApproval === false) {
+        enabled = false;
+      }
 
-    if (!approvalEnabled) {
-      // Approval not required — publish directly
-      finalStatus = ACTIVITY_STATUS.PUBLISHED;
+      if (!enabled) {
+        finalStatus = ACTIVITY_STATUS.PUBLISHED;
+      }
+    } catch (_) {
+      // Config unavailable — fall back to requiring approval (safe default)
     }
   }
 
@@ -372,6 +435,7 @@ const getMyOrgActivities = async (userId, { page = 1, limit = 20, activityStatus
           ORG_MEMBER_ROLE.VICE_PRESIDENT,
           ORG_MEMBER_ROLE.HEAD_OF_DEPARTMENT,
           ORG_MEMBER_ROLE.VICE_HEAD,
+          "leader", // assigned by promoteUser
         ],
       },
     },
@@ -424,6 +488,17 @@ const softDeleteActivity = async (activityId, userId, roles) => {
 
   const hasPermission = await isAdminOrOrgLeader(roles, activity.organizationId, userId);
   if (!hasPermission) throw new AppError("FORBIDDEN");
+
+  // Spec: chỉ xóa khi "Chưa bắt đầu" (DRAFT/PUBLISHED) hoặc "Đã kết thúc" (FINISHED)
+  const deletableStatuses = [
+    ACTIVITY_STATUS.DRAFT,
+    ACTIVITY_STATUS.PUBLISHED,
+    ACTIVITY_STATUS.FINISHED,
+    ACTIVITY_STATUS.CANCELLED,
+  ];
+  if (!deletableStatuses.includes(activity.activityStatus)) {
+    throw new AppError("ACTIVITY_CANNOT_MODIFY", "Chỉ có thể xóa sự kiện chưa bắt đầu hoặc đã kết thúc");
+  }
 
   // Invalidate caches
   await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`);
@@ -491,6 +566,163 @@ const getCheckinSessions = async (activityId) => {
   });
 };
 
+// ─── Checkin / Checkout lifecycle (tách biệt) ───────────────────────────────
+
+const _getActivityAndCheckPerm = async (activityId, userId, roles) => {
+  const activity = await prisma.activity.findFirst({
+    where: { activityId: Number(activityId), isDeleted: false },
+  });
+  if (!activity) throw new AppError("ACTIVITY_NOT_FOUND");
+  const hasPermission = await isAdminOrOrgLeader(roles, activity.organizationId, userId);
+  if (!hasPermission) throw new AppError("FORBIDDEN");
+  return activity;
+};
+
+// Org bấm "Mở Check-in": tạo session, chỉ set checkInTime
+const openCheckin = async (activityId, data, userId, roles) => {
+  const activity = await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  if (activity.activityStatus !== ACTIVITY_STATUS.RUNNING) {
+    throw new AppError("ACTIVITY_CANNOT_MODIFY", "Hoạt động chưa bắt đầu hoặc đã kết thúc");
+  }
+
+  const startAt = data?.checkInTime ? new Date(data.checkInTime) : new Date();
+  const closeAt = data?.durationMinutes
+    ? new Date(startAt.getTime() + Number(data.durationMinutes) * 60_000)
+    : null;
+
+  const session = await prisma.activityCheckin.create({
+    data: {
+      activityId: Number(activityId),
+      checkInTime: startAt,
+      checkInCloseTime: closeAt,
+    },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return session;
+};
+
+// Org bấm "Đóng Check-in": set checkInCloseTime
+const closeCheckin = async (activityId, checkinId, userId, roles) => {
+  await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  const session = await prisma.activityCheckin.findFirst({
+    where: { checkinId: Number(checkinId), activityId: Number(activityId) },
+  });
+  if (!session) throw new AppError("CHECKIN_SESSION_NOT_FOUND");
+
+  const updated = await prisma.activityCheckin.update({
+    where: { checkinId: Number(checkinId) },
+    data: { checkInCloseTime: new Date() },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return updated;
+};
+
+// Org bấm "Mở Check-out": set checkOutTime (phải đóng checkin trước)
+const openCheckout = async (activityId, checkinId, data, userId, roles) => {
+  await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  const session = await prisma.activityCheckin.findFirst({
+    where: { checkinId: Number(checkinId), activityId: Number(activityId) },
+  });
+  if (!session) throw new AppError("CHECKIN_SESSION_NOT_FOUND");
+
+  const now = new Date();
+  const checkinEffectivelyClosed =
+    session.checkInCloseTime && now >= new Date(session.checkInCloseTime);
+  if (!checkinEffectivelyClosed) {
+    throw new AppError("ACTIVITY_CANNOT_MODIFY", "Phải đóng Check-in trước khi mở Check-out");
+  }
+
+  const startAt = now;
+  const closeAt = data?.durationMinutes
+    ? new Date(startAt.getTime() + Number(data.durationMinutes) * 60_000)
+    : null;
+
+  const updated = await prisma.activityCheckin.update({
+    where: { checkinId: Number(checkinId) },
+    data: { checkOutTime: startAt, checkOutCloseTime: closeAt },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return updated;
+};
+
+// Org bấm "Đóng Check-out": set checkOutCloseTime = now (kết thúc ngay)
+const closeCheckout = async (activityId, checkinId, userId, roles) => {
+  await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  const session = await prisma.activityCheckin.findFirst({
+    where: { checkinId: Number(checkinId), activityId: Number(activityId) },
+  });
+  if (!session) throw new AppError("CHECKIN_SESSION_NOT_FOUND");
+  if (!session.checkOutTime) {
+    throw new AppError("ACTIVITY_CANNOT_MODIFY", "Check-out chưa được mở");
+  }
+
+  const updated = await prisma.activityCheckin.update({
+    where: { checkinId: Number(checkinId) },
+    data: { checkOutCloseTime: new Date() },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return updated;
+};
+
+// Org gia hạn thêm thời gian cho check-in
+const extendCheckin = async (activityId, checkinId, minutes, userId, roles) => {
+  await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  const session = await prisma.activityCheckin.findFirst({
+    where: { checkinId: Number(checkinId), activityId: Number(activityId) },
+  });
+  if (!session) throw new AppError("CHECKIN_SESSION_NOT_FOUND");
+
+  const now = new Date();
+  const base = session.checkInCloseTime && new Date(session.checkInCloseTime) > now
+    ? new Date(session.checkInCloseTime)
+    : now;
+  const newCloseTime = new Date(base.getTime() + Number(minutes) * 60_000);
+
+  const updated = await prisma.activityCheckin.update({
+    where: { checkinId: Number(checkinId) },
+    data: { checkInCloseTime: newCloseTime },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return updated;
+};
+
+// Org gia hạn thêm thời gian cho check-out
+const extendCheckout = async (activityId, checkinId, minutes, userId, roles) => {
+  await _getActivityAndCheckPerm(activityId, userId, roles);
+
+  const session = await prisma.activityCheckin.findFirst({
+    where: { checkinId: Number(checkinId), activityId: Number(activityId) },
+  });
+  if (!session) throw new AppError("CHECKIN_SESSION_NOT_FOUND");
+  if (!session.checkOutTime) {
+    throw new AppError("ACTIVITY_CANNOT_MODIFY", "Check-out chưa được mở");
+  }
+
+  const now = new Date();
+  const base = session.checkOutCloseTime && new Date(session.checkOutCloseTime) > now
+    ? new Date(session.checkOutCloseTime)
+    : now;
+  const newCloseTime = new Date(base.getTime() + Number(minutes) * 60_000);
+
+  const updated = await prisma.activityCheckin.update({
+    where: { checkinId: Number(checkinId) },
+    data: { checkOutCloseTime: newCloseTime },
+  });
+
+  try { await cache.del(`${cache.REDIS_PREFIX.ACTIVITY_DETAIL}${activityId}`); } catch (_) {}
+  return updated;
+};
+
 module.exports = {
   createActivity,
   getActivities,
@@ -502,5 +734,11 @@ module.exports = {
   createCategory,
   createCheckinSession,
   getCheckinSessions,
+  openCheckin,
+  closeCheckin,
+  openCheckout,
+  closeCheckout,
+  extendCheckin,
+  extendCheckout,
   getMyOrgActivities,
 };

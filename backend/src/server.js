@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const { validateEnv } = require("./config/env");
 const connectDB = require("./config/db");
-const { connectRedis } = require("./config/redis");
+const { connectRedis, disconnectRedis } = require("./config/redis");
 const {
   startNotificationWorker,
   stopNotificationWorker,
@@ -41,6 +41,7 @@ const gracefulShutdown = async () => {
   await stopNotificationWorker();
   await stopRegistrationWorker();
   await closeQueues();
+  await disconnectRedis();
   process.exit(0);
 };
 

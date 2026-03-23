@@ -81,9 +81,11 @@ export interface Form {
   closeAt?: string | null
   activityId?: number | null
   organizationId?: number | null
+  createdBy?: number | null
   createdAt: string
   sections: FormSection[]
   _count?: { responses: number }
+  organization?: { organizationId: number; organizationName: string } | null
 }
 
 // ─── Submission ───────────────────────────────────────────────────────────────

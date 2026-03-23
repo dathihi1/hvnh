@@ -1,12 +1,20 @@
 const prisma = require("../config/prisma");
 const { ORG_MEMBER_ROLE } = require("./constants");
 
+const LEADER_ROLES = [
+  ORG_MEMBER_ROLE.PRESIDENT,
+  ORG_MEMBER_ROLE.VICE_PRESIDENT,
+  ORG_MEMBER_ROLE.HEAD_OF_DEPARTMENT,
+  ORG_MEMBER_ROLE.VICE_HEAD,
+  "leader", // assigned by promoteUser / legacy data
+];
+
 const isOrgLeader = async (organizationId, userId) => {
   const member = await prisma.organizationMember.findFirst({
     where: {
       organizationId,
       userId,
-      role: ORG_MEMBER_ROLE.PRESIDENT,
+      role: { in: LEADER_ROLES },
       isDeleted: false,
     },
   });

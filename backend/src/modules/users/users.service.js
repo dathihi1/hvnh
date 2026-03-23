@@ -7,6 +7,8 @@ const USER_SELECT = {
   userName: true,
   studentId: true,
   university: true,
+  faculty: true,
+  className: true,
   phoneNumber: true,
   email: true,
   status: true,
@@ -181,6 +183,27 @@ const getUserOrganizations = async (userId) => {
   return members;
 };
 
+// ─── Lookup user by email (for team member search) ──────────────────────────
+
+const lookupByEmail = async (email) => {
+  if (!email) return null;
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" }, isDeleted: false },
+    select: {
+      userId: true,
+      userName: true,
+      email: true,
+      studentId: true,
+      phoneNumber: true,
+      avatarUrl: true,
+      university: true,
+    },
+  });
+  if (!user) return null;
+  await resolveFields(user, ["avatarUrl"]);
+  return user;
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -189,4 +212,5 @@ module.exports = {
   softDeleteUser,
   getUserActivities,
   getUserOrganizations,
+  lookupByEmail,
 };

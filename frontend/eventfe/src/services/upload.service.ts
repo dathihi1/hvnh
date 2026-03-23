@@ -17,7 +17,7 @@ interface ReadUrlResponse {
   }
 }
 
-type UploadFolder = "avatars" | "covers" | "logos" | "documents"
+type UploadFolder = "avatars" | "covers" | "logos" | "documents" | "gallery"
 
 /**
  * Get a presigned upload URL from the backend.

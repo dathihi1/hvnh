@@ -86,6 +86,47 @@ const me = async (req, res, next) => {
   }
 };
 
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { userId, otp } = req.body;
+    const result = await authService.verifyOtp(userId, otp);
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const resendOtp = async (req, res, next) => {
+  try {
+    await authService.resendOtp(req.body.email);
+    return success(res, { message: "OTP đã được gửi lại" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const googleCallback = async (req, res, next) => {
+  try {
+    const code = await authService.loginWithGoogle(req.user);
+    return res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?code=${code}`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const exchangeGoogleCode = async (req, res, next) => {
+  try {
+    const { code } = req.query;
+    if (!code) {
+      return res.status(400).json({ success: false, error: "Missing code" });
+    }
+    const result = await authService.exchangeGoogleCode(code);
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -95,4 +136,8 @@ module.exports = {
   resetPassword,
   changePassword,
   me,
+  verifyOtp,
+  resendOtp,
+  googleCallback,
+  exchangeGoogleCode,
 };

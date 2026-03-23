@@ -1,12 +1,24 @@
-import { Input } from "@/components/ui/input";
-import { ChevronDown, Search } from "lucide-react";
+"use client";
+
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { UserMenu } from "../avatar";
 import { NotificationBell } from "@/components/ui-custom/NotificationBell";
 import { OrgBrand } from "../OrgBrand";
+import { HeaderSearchBar } from "@/components/ui-custom/HeaderSearchBar";
+import { useQuery } from "@tanstack/react-query";
+import { getMyOrganization } from "@/services/organization.service";
 
-export async function Header({ isClub = false }: { isClub?: boolean }) {
+export function Header({ isClub = false }: { isClub?: boolean }) {
+  const { data: orgData } = useQuery({
+    queryKey: ["my-organization"],
+    queryFn: getMyOrganization,
+    enabled: isClub,
+    staleTime: 5 * 60 * 1000,
+  });
+  const orgType = orgData?.data?.organizationType ?? null;
+  const isClubType = !orgType || orgType === "club";
   return (
     <header className="bg-[#05566B] flex items-center justify-between sticky top-0 w-full z-[999]">
       {isClub ? (
@@ -26,19 +38,33 @@ export async function Header({ isClub = false }: { isClub?: boolean }) {
             <ChevronDown className="group-hover:rotate-180 transition-transform duration-200 inline-block" />
           </Link>
           <div className="absolute top-[60px] left-0 bg-[#05566B] hidden group-hover:block shadow-lg z-50 w-[250px] rounded-[8px]">
-            <Link href="/event?type=competition" className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
+            <Link href={isClub ? "/organization/event" : "/event"} className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
+              Tất Cả Sự Kiện
+            </Link>
+            <Link href={isClub ? "/organization/event?type=competition" : "/event?type=competition"} className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
               Cuộc Thi
             </Link>
-            <Link href="/event?type=program" className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
+            <Link href={isClub ? "/organization/event?type=program" : "/event?type=program"} className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
               Chương Trình
             </Link>
+            {isClub && (
+              <>
+                <div className="border-t border-teal-600 mx-4 my-1" />
+                <Link href="/organization/create-program" className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
+                  + Tạo Mới Chương Trình
+                </Link>
+                <Link href="/organization/create-contest" className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] transition-colors hover:bg-teal-700 rounded-[8px]">
+                  + Tạo Mới Cuộc Thi
+                </Link>
+              </>
+            )}
           </div>
         </div>
         <div className="relative group">
           {isClub ? (
             <div className="relative group">
               <div className="text-white uppercase font-bold tracking-wider text-[13px] px-6 py-6 flex items-center gap-2 cursor-pointer">
-                Quản lý
+                {isClubType ? "Quản lý câu lạc bộ" : "Quản lý tổ chức"}
                 <ChevronDown className="group-hover:rotate-180 transition-transform duration-200" />
               </div>
 
@@ -47,7 +73,7 @@ export async function Header({ isClub = false }: { isClub?: boolean }) {
                   href="/organization/club/info"
                   className="block px-6 py-4 text-white uppercase font-bold tracking-wider text-[13px] hover:bg-teal-700 rounded-[8px]"
                 >
-                  Thông tin CLB
+                  {isClubType ? "Thông tin CLB" : "Thông tin tổ chức"}
                 </Link>
 
                 <Link
@@ -84,13 +110,7 @@ export async function Header({ isClub = false }: { isClub?: boolean }) {
         <Link href={isClub ? "/organization/contact" : "/contact"} className='text-white uppercase font-bold tracking-wider text-[13px] px-6 py-6 transition-colors'>Liên hệ</Link>
       </nav>
       <div className="flex gap-[40px] pr-[30px] items-center">
-        <div className="relative bg-white rounded-[50px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
-          <Input
-            placeholder="Search"
-            className="pl-9 bg-transparent border-white/30 w-[200px] rounded-full"
-          />
-        </div>
+        <HeaderSearchBar />
         <UserMenu isOrganization={isClub} />
         <NotificationBell />
       </div>

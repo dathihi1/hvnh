@@ -19,6 +19,17 @@ const cancelRegistration = async (req, res, next) => {
   }
 };
 
+const getMyRegistrationByActivity = async (req, res, next) => {
+  try {
+    const result = await registrationsService.getMyRegistrationByActivity(
+      req.user.userId, req.params.activityId
+    );
+    return success(res, result); // null nếu chưa đăng ký
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMyRegistrations = async (req, res, next) => {
   try {
     const result = await registrationsService.getMyRegistrations(req.user.userId, req.query);
@@ -101,9 +112,19 @@ const getActivityParticipantStats = async (req, res, next) => {
   }
 };
 
+const matchTeam = async (req, res, next) => {
+  try {
+    const result = await registrationsService.matchTeam(req.body, req.user.userId, req.user.roles);
+    return success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createRegistration,
   cancelRegistration,
+  getMyRegistrationByActivity,
   getMyRegistrations,
   getRegistrationsByActivity,
   getRegistrationById,
@@ -112,4 +133,5 @@ module.exports = {
   checkin,
   checkout,
   getActivityParticipantStats,
+  matchTeam,
 };

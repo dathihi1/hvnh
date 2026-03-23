@@ -19,6 +19,8 @@ const formSchema = z.object({
   student_code: z.string().optional(),
   email:        z.string().email("Email không hợp lệ"),
   university:   z.string().min(1, "Vui lòng nhập trường"),
+  faculty:      z.string().optional(),
+  className:    z.string().optional(),
   phone:        z.string().regex(/^[0-9]{10,11}$/, "Số điện thoại không hợp lệ").optional().or(z.literal("")),
 })
 
@@ -38,6 +40,8 @@ export function ProfileForm({ user, isLoading, pendingAvatarKey }: ProfileFormPr
       student_code: user?.studentId   ?? "",
       email:        user?.email       ?? "",
       university:   user?.university  ?? "",
+      faculty:      user?.faculty     ?? "",
+      className:    user?.className   ?? "",
       phone:        user?.phoneNumber ?? "",
     },
   })
@@ -49,6 +53,8 @@ export function ProfileForm({ user, isLoading, pendingAvatarKey }: ProfileFormPr
         student_code: user.studentId   ?? "",
         email:        user.email       ?? "",
         university:   user.university  ?? "",
+        faculty:      user.faculty     ?? "",
+        className:    user.className   ?? "",
         phone:        user.phoneNumber ?? "",
       })
     }
@@ -62,6 +68,8 @@ export function ProfileForm({ user, isLoading, pendingAvatarKey }: ProfileFormPr
         userName: data.name,
         studentId: data.student_code || null,
         university: data.university,
+        faculty: data.faculty || null,
+        className: data.className || null,
         phoneNumber: data.phone || null,
       }
       if (pendingAvatarKey) body.avatarUrl = pendingAvatarKey
@@ -140,6 +148,28 @@ export function ProfileForm({ user, isLoading, pendingAvatarKey }: ProfileFormPr
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel>Trường:</FieldLabel>
                   <Input {...field} aria-invalid={fieldState.invalid} autoComplete="on" placeholder="VD: Đại học Bách Khoa HCM" />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+            <Controller
+              name="faculty"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Khoa:</FieldLabel>
+                  <Input {...field} aria-invalid={fieldState.invalid} autoComplete="on" placeholder="VD: Khoa Công nghệ thông tin" />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+            <Controller
+              name="className"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Lớp niên chế:</FieldLabel>
+                  <Input {...field} aria-invalid={fieldState.invalid} autoComplete="on" placeholder="VD: CNTT2021" />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}

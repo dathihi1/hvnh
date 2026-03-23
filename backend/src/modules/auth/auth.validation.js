@@ -28,10 +28,26 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6, "New password must be at least 6 characters"),
 });
 
+const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, "Refresh token is required"),
+});
+
+const verifyOtpSchema = z.object({
+  userId: z.number().int().positive(),
+  otp: z.string().length(6, "OTP phải có 6 chữ số"),
+});
+
+const resendOtpSchema = z.object({
+  email: z.string().email("Invalid email"),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  refreshTokenSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
 };

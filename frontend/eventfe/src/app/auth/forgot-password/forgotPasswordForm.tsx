@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-
+import { http } from "@/configs/http.comfig"
+import { toast } from "sonner"
 
 const formSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
@@ -35,8 +36,14 @@ export function ForgotPasswordForm() {
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    router.push(`/auth/verify-code?email=${data.email}`)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    const res = await http.post(`/api/auth/forgot-password`, { email: data.email }) as any
+    if (!res?.success) {
+      toast.error(res?.message || "Có lỗi xảy ra")
+      return
+    }
+    toast.success("Email khôi phục mật khẩu đã được gửi")
+    router.push(`/auth/forgot-password/sent`)
   }
 
   return (

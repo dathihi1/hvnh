@@ -15,9 +15,12 @@ model User {
   userName              String
   studentId             String?
   university            String
-  phoneNumber           String?                @unique
+  faculty               String?
+  className             String?
+  phoneNumber           String?
   email                 String                 @unique
-  password              String
+  password              String?
+  googleId              String?                @unique
   status                String                 @default("active")
   avatarUrl             String?
   isDeleted             Boolean                @default(false)
@@ -53,9 +56,20 @@ model Organization {
   email                 String?                @unique
   password              String?
   status                String                 @default("active")
+  isRecruiting          Boolean                @default(false)
   logoUrl               String?
   coverImageUrl         String?
+  leftImageUrl          String?
+  rightImageUrl         String?
+  middleImageUrl        String?
   description           String?
+  tiktokUrl             String?
+  facebookUrl           String?
+  phoneNumber           String?
+  applyDeadline         DateTime?
+  responseDeadline      DateTime?
+  interviewSchedule     DateTime?
+  recruitmentFormId     Int?
   isDeleted             Boolean                @default(false)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now())
@@ -65,9 +79,11 @@ model Organization {
   deletedBy             Int?
 
   activities            Activity[]
+  clubApplications      ClubApplication[]
   forms                 Form[]
   organizationDocuments OrganizationDocument[]
   organizationMembers   OrganizationMember[]
+  recruitmentForm       Form?                  @relation("OrgRecruitmentForm", fields: [recruitmentFormId], references: [formId])
   systemConfigs         SystemConfig[]
 
   @@map("organizations")
@@ -173,10 +189,12 @@ model Activity {
 }
 
 model ActivityCheckin {
-  checkinId    Int       @id @default(autoincrement())
-  activityId   Int
-  checkInTime  DateTime?
-  checkOutTime DateTime?
+  checkinId         Int       @id @default(autoincrement())
+  activityId        Int
+  checkInTime       DateTime?
+  checkInCloseTime  DateTime?
+  checkOutTime      DateTime?
+  checkOutCloseTime DateTime?
 
   activity             Activity              @relation(fields: [activityId], references: [activityId], onDelete: Cascade)
   registrationCheckins RegistrationCheckin[]
@@ -278,25 +296,28 @@ model Review {
 }
 
 model ClubApplication {
-  applicationId Int       @id @default(autoincrement())
-  submittedAt   DateTime  @default(now())
-  interviewTime DateTime?
-  result        String    @default("pending")
-  note          String?
-  activityId    Int
-  userId        Int
-  isDeleted     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now())
-  deletedAt     DateTime?
-  createdBy     Int?
-  updatedBy     Int?
-  deletedBy     Int?
+  applicationId  Int           @id @default(autoincrement())
+  submittedAt    DateTime      @default(now())
+  interviewTime  DateTime?
+  result         String        @default("pending")
+  note           String?
+  activityId     Int?
+  organizationId Int?
+  userId         Int
+  isDeleted      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now())
+  deletedAt      DateTime?
+  createdBy      Int?
+  updatedBy      Int?
+  deletedBy      Int?
 
-  activity      Activity  @relation(fields: [activityId], references: [activityId])
-  user          User      @relation(fields: [userId], references: [userId])
+  activity       Activity?     @relation(fields: [activityId], references: [activityId])
+  organization   Organization? @relation(fields: [organizationId], references: [organizationId])
+  user           User          @relation(fields: [userId], references: [userId])
 
   @@unique([activityId, userId])
+  @@unique([organizationId, userId])
   @@map("club_applications")
 }
 
@@ -472,11 +493,12 @@ model Form {
   updatedBy           Int?
   deletedBy           Int?
 
-  activity            Activity?      @relation("ActivityForms", fields: [activityId], references: [activityId])
-  organization        Organization?  @relation(fields: [organizationId], references: [organizationId])
-  activityRegistrations Activity[]   @relation("RegistrationForm")
-  sections            FormSection[]
-  responses           FormResponse[]
+  activity              Activity?      @relation("ActivityForms", fields: [activityId], references: [activityId])
+  organization          Organization?  @relation(fields: [organizationId], references: [organizationId])
+  activityRegistrations Activity[]     @relation("RegistrationForm")
+  orgRecruitments       Organization[] @relation("OrgRecruitmentForm")
+  sections              FormSection[]
+  responses             FormResponse[]
 
   @@index([organizationId])
   @@index([activityId])

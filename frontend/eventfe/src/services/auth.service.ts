@@ -8,6 +8,8 @@ export interface UserProfile {
   userName: string;
   email: string;
   university: string;
+  faculty: string | null;
+  className: string | null;
   studentId: string | null;
   phoneNumber: string | null;
   avatarUrl: string | null;
