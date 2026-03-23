@@ -547,9 +547,9 @@ export default function ClubInfoPage() {
               organizationName: editName,
               description: editDesc,
               ...(editEmail ? { email: editEmail } : {}),
-              ...(editTiktok ? { tiktokUrl: editTiktok } : { tiktokUrl: null }),
-              ...(editFacebook ? { facebookUrl: editFacebook } : { facebookUrl: null }),
-              ...(editPhone ? { phoneNumber: editPhone } : { phoneNumber: null }),
+              ...(editTiktok ? { tiktokUrl: editTiktok } : { tiktokUrl: undefined }),
+              ...(editFacebook ? { facebookUrl: editFacebook } : { facebookUrl: undefined }),
+              ...(editPhone ? { phoneNumber: editPhone } : { phoneNumber: undefined }),
             })}
           >
             {editMut.isPending ? "Đang lưu..." : "Lưu"}
