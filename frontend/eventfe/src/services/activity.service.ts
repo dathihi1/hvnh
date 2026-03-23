@@ -25,6 +25,7 @@ export interface Activity {
   organization?: { organizationId: number; organizationName: string; logoUrl: string | null };
   category?: { categoryId: number; categoryName: string };
   _count?: { registrations: number };
+  activityTeamRule?: { minTeamMembers: number | null; maxTeamMembers: number | null } | null;
   activeCheckinSession?: {
     checkinId: number;
     checkInTime: string | null;
