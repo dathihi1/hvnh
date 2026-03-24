@@ -583,10 +583,10 @@ export default function DetailEventPage() {
             <span className="font-medium">Loại:</span>{" "}
             {TYPE_MAP[activity.activityType] ?? activity.activityType}
           </div>
-          {activity.activityCategory && (
+          {activity.category && (
             <div className="text-[14px]">
               <span className="font-medium">Phân loại:</span>{" "}
-              {activity.activityCategory.categoryName}
+              {activity.category.categoryName}
             </div>
           )}
           <div className="text-[14px]">

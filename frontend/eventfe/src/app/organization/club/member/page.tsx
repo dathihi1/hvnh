@@ -96,8 +96,8 @@ export default function ClubMemberPage() {
     queryFn: () => getAllMembersWithGroups(orgId!),
     enabled: !!orgId && activeTab === "groups",
   });
-  const grouped = groupsData?.data?.data.grouped ?? [];
-  const ungrouped = groupsData?.data?.data.ungrouped ?? [];
+  const grouped = groupsData?.data?.grouped ?? [];
+  const ungrouped = groupsData?.data?.ungrouped ?? [];
 
   // -- Mutations (List) --
   const removeMut = useMutation({
@@ -134,8 +134,14 @@ export default function ClubMemberPage() {
   const lookupMut = useMutation({
     mutationFn: (email: string) => lookupUserByEmail(email),
     onSuccess: (res) => {
-      if (res.data?.data) { setPreviewUser(res.data.data); setPreviewError(null); }
-      else { setPreviewUser(null); setPreviewError("Không tìm thấy người dùng"); }
+      const foundUser = res?.data;
+      if (foundUser) {
+        setPreviewUser(foundUser);
+        setPreviewError(null);
+      } else {
+        setPreviewUser(null);
+        setPreviewError("Không tìm thấy người dùng");
+      }
     },
     onError: () => { setPreviewUser(null); setPreviewError("Không tìm thấy người dùng"); },
   });
@@ -298,7 +304,7 @@ export default function ClubMemberPage() {
                               <div key={m.userId} className="flex items-center gap-2 text-xs">
                                 {m.user?.avatarUrl ? <Image src={m.user.avatarUrl} alt="avt" width={24} height={24} className="rounded-full" /> : <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500 truncate">{m.user?.userName?.charAt(0)}</div>}
                                 <span className="font-medium text-gray-700">{m.user?.userName}</span>
-                                <span className="text-gray-400">({getRoleLabel(m.role, orgType)})</span>
+                                <span className="text-gray-400">({getRoleLabel(m.role ?? "member", orgType)})</span>
                               </div>
                             ))
                           }

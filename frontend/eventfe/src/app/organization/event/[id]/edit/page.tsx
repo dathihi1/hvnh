@@ -279,7 +279,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
                 // If new file selected, clear existing key until saved
                 if (file) setCoverKey(null)
               }}
-              existingUrl={coverKey ? `${envConfig.NEXT_PUBLIC_API_URL}/uploads/${coverKey}` : undefined}
+              currentImageUrl={coverKey ? `${envConfig.NEXT_PUBLIC_API_URL}/uploads/${coverKey}` : undefined}
               className="mt-2 max-w-[300px]"
             />
           </div>

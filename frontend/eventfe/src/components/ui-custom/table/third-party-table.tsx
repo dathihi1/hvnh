@@ -292,9 +292,10 @@ export function ThirdPartyTable({
   const handleDelete = React.useCallback(async (org: ThirdParty) => {
     if (!confirm(`Xóa tổ chức "${org.organizationName}"?`)) return
     try {
-      const res = await http.delete<{ success: boolean }>(
-        `${envConfig.NEXT_PUBLIC_API_URL}/admin/organizations/${org.organizationId}`
-      ) as any
+      const res = await http.delete<{ success: boolean; message?: string }>(
+        `${envConfig.NEXT_PUBLIC_API_URL}/admin/organizations/${org.organizationId}`,
+        undefined
+        )
       if (!res?.success) throw new Error(res?.message || "Xóa thất bại")
       toast.success("Xóa thành công")
       onRefresh?.()

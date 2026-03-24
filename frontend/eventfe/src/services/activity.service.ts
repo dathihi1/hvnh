@@ -107,7 +107,7 @@ export interface CreateActivityPayload {
   description?: string | null;
   coverImage?: string | null;
   location?: string | null;
-  activityType: "program" | "competition";
+  activityType: "program" | "competition" | "recruitment";
   teamMode?: "individual" | "team" | "both";
   startTime?: string | null;
   endTime?: string | null;
